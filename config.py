@@ -8,10 +8,10 @@ class config:
     observation_space = None
     action_space = None
 
-    discretization = 20
+    discretization = 30
     num_states = None
 
-    num_episodes = 1000
+    num_episodes = 3000
 
     def update_observation_space(observation_space):
         config.observation_space = observation_space

@@ -17,7 +17,7 @@ def plot_cumulative_mean_rewards(history):
 
 def plot_all(history):
     fig, ax = plt.subplots(1, 2, figsize=(10, 5))
-    ax[0].plot(history)
+    ax[0].plot(history, alpha=0.5)
     ax[0].set(xlabel='Episode', ylabel='Reward', title='Reward per episode')
     ax[0].grid()
     ax[1].plot(pd.Series(history).expanding().mean())
@@ -28,7 +28,7 @@ def plot_all(history):
 def plot_all_multi(history, labels):
     fig, ax = plt.subplots(1, 2, figsize=(10, 5))
     for i in range(len(history)):
-        ax[0].plot(history[i], label=labels[i])
+        ax[0].plot(history[i], label=labels[i], alpha=0.5)
         ax[1].plot(pd.Series(history[i]).expanding().mean(), label=labels[i])
     ax[0].set(xlabel='Episode', ylabel='Reward', title='Reward per episode')
     ax[0].grid()
@@ -41,7 +41,7 @@ def plot_all_multi(history, labels):
 def plot_all_multi_with_mean(history, labels):
     fig, ax = plt.subplots(1, 2, figsize=(10, 5))
     for i in range(len(history)):
-        ax[0].plot(history[i], label=labels[i])
+        ax[0].plot(history[i], label=labels[i], alpha=0.5)
         ax[1].plot(pd.Series(history[i]).expanding().mean(), label=labels[i])
     ax[0].set(xlabel='Episode', ylabel='Reward', title='Reward per episode')
     ax[0].grid()

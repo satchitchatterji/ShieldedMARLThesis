@@ -32,42 +32,57 @@ def run(env, agent, run_fn, num_episodes):
     if not config.ready():
         raise Exception('Config not ready!')
     else:
-        print('Config ready!')
+        pass
+        # print('Config ready!')
         # config.print()
     bestparams = None
     bestreward = None
     history = []
+    # deterministic_history = []
     for _ in range(num_episodes):
         params = agent.get_params()
         reward = run_fn(env, agent, env.spec.max_episode_steps)
+        # deterministic_history.append(evaluate(config.env, agent, params, env.spec.max_episode_steps, False))
         history.append(reward)
         if bestreward is None or reward > bestreward:
             bestreward = reward
             bestparams = params
     return bestparams, bestreward, np.array(history)
 
-def evaluate(env, agent, params, max_steps):
+def evaluate(env_name, agent, params, max_steps, render=True):
     agent.eval_mode = True
-    env_render = gym.make(config.env, render_mode="human")
+    if render:
+        env_render = gym.make(env_name, render_mode="human")
+    else:
+        env_render = gym.make(env_name)
     agent.set_params(params)
-    run_episode(env_render, agent, max_steps)
+    reward = run_episode(env_render, agent, max_steps)
     env_render.close()
     agent.eval_mode = False
+    return reward
 
 if __name__ == '__main__':
     env = gym.make(config.env)
     config.update_action_space(env.action_space.n)
     config.update_observation_space(len(env.reset()[0]))
     histories = []
-    n_runs = 10
+    # determinisitcs = []
+    n_runs = 5
     for i in range(n_runs):
         agent = QAgent(config.num_states, env.action_space.n)
 
         bestparams, bestreward, history = run(env, agent, run_episode, config.num_episodes)
-        evaluate(env, agent, bestparams, env.spec.max_episode_steps)
-        print(bestreward)
+
+        eval_rewards = []
+        for _ in range(10):
+            eval_rewards.append(evaluate(config.env, agent, bestparams, env.spec.max_episode_steps, render=False))
+        
+        print('Run {}: Best train reward: {}, mean eval reward: {}, std eval reward: {}'.format(i, bestreward, np.mean(eval_rewards), np.std(eval_rewards)))
         env.close()
     
         histories.append(history)
+        # determinisitcs.append(determinisitc)
+
     
     plot_all_multi_with_mean(histories, ['Run {}'.format(i) for i in range(n_runs)])
+    # plot_all_multi_with_mean(determinisitcs, ['Run {}'.format(i) for i in range(n_runs)])
