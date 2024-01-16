@@ -69,6 +69,43 @@ def run(env, agents, run_fn, num_episodes):
 
     return bestparams, bestreward, np.array(history)
 
+
+def run_synch(env, agents, run_fn, num_episodes):
+    if not config.ready():
+        raise Exception('Config not ready!')
+    else:
+        pass
+        # print('Config ready!')
+        # config.print()
+    best_q_params = None
+    bestparams = [None]*num_episodes
+    bestreward = [None]*num_episodes
+    history = []
+    for e in range(num_episodes):
+        
+        for agent in agents:
+            if agent.name == 'Q-Learning':
+                if best_q_params is not None:
+                    agent.set_params(best_q_params)
+
+        rewards = run_fn(env, agents, env.spec.max_episode_steps)
+        history.append(rewards)
+        params = [agent.get_params() for agent in agents]
+        # find the best agent
+        bestreward_idx = np.argmax(rewards.sum(axis=1))
+        bestreward[e] = rewards[bestreward_idx].sum()
+        bestparams[e] = params[bestreward_idx]
+
+        agent_params = np.zeros(agents[0].get_params().shape)
+        for agent in agents:
+            if agent.name == 'Q-Learning':
+                agent_params += agent.get_params()
+    
+        best_q_params = agent_params/num_agents
+
+
+    return bestparams, bestreward, np.array(history)
+
 def evaluate(env_name, agents, params, max_steps, render=True):
     for agent in agents:
         agent.eval_mode = True
@@ -91,17 +128,20 @@ if __name__ == '__main__':
     histories = []
     epsilon_histories = []
     n_runs = config.n_runs
-    best_q_params = [None, None]
     num_agents = 4
     
     for i in range(n_runs):
         
         agents = [
             PDQAgent(num_states=2, num_actions=2, num_agents=num_agents),
-            CAgent(num_states=2, num_actions=2, num_agents=num_agents),
-            # DAgent(num_states=2, num_actions=2, num_agents=num_agents),
             # PDQAgent(num_states=2, num_actions=2, num_agents=num_agents),
+            # PDQAgent(num_states=2, num_actions=2, num_agents=num_agents),
+            # PDQAgent(num_states=2, num_actions=2, num_agents=num_agents),
+            # PDQAgent(num_states=2, num_actions=2, num_agents=num_agents),
+            CAgent(num_states=2, num_actions=2, num_agents=num_agents),
             DAgent(num_states=2, num_actions=2, num_agents=num_agents),
+            # PDQAgent(num_states=2, num_actions=2, num_agents=num_agents),
+            # DAgent(num_states=2, num_actions=2, num_agents=num_agents),
             TitForTatAgent(num_states=2, num_actions=2, num_agents=num_agents),
         ]
 
@@ -122,7 +162,7 @@ if __name__ == '__main__':
             print('Run {}: Agent 0 params:'.format(i))
             print(agents[0].get_params())
             epsilon_histories += agents[0].epsilon_histories
-
+        
         # determinisitcs.append(determinisitc)
 
     print(np.array(histories).shape) # (5, 1000, 2, 2) (n_runs, num_episodes, num_agents, num_agents)
@@ -131,7 +171,7 @@ if __name__ == '__main__':
     histories = np.concatenate(histories, axis=0)
     print(histories.shape) #
     # plot concatenated histories in one plot and put a vertical line to sepatate runs
-    sum_rewards_per_agent = np.sum(histories, axis=-1)/env.spec.max_episode_steps
+    sum_rewards_per_agent = np.sum(histories, axis=-1)/env.spec.max_episode_steps/num_agents
     for agent in range(num_agents):
         plt.plot(sum_rewards_per_agent[:, agent], label='Agent {}'.format(agents[agent].name))
         plt.legend()
