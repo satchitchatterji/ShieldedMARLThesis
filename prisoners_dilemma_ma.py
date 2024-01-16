@@ -4,7 +4,7 @@ import numpy as np
 
 class spec:
     def __init__(self):
-        self.max_episode_steps = 10
+        self.max_episode_steps = 100
 
 class action_space:
     def __init__(self, n):
@@ -30,6 +30,12 @@ class PrisonersDilemmaMAEnv:
     
     def step(self, actions):
         # actions is 2D array of shape (n_agents, n_agents)
+        # cooperate means tell the truth (0)
+        # defect means lie (1)
+        # Nash equilibrium is to defect
+        # if both cooperate, both get 8
+        # if both defect, both get 4
+        # if one cooperates and the other defects, the defector gets 10 and the cooperator gets 0
         rewards = np.zeros((self.n_agents, self.n_agents))
         for i in range(self.n_agents):
             for j in range(self.n_agents):

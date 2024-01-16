@@ -36,6 +36,7 @@ class TitForTatAgent(object):
 
     def begin_episode(self):
         self.prev_states = [None]*self.num_agents
+        pass
 
     def get_params(self):
         return "Tit4Tat"

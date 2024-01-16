@@ -24,7 +24,7 @@ def run_episode(env, agents, max_steps):
         # env.render()
         actions = []
         for i, agent in enumerate(agents):
-            actions.append(agent.act(observation[i]))
+            actions.append(agent.act(np.array(observation).T[i]))
         
         observation, rewards, terminated, truncated, info = env.step(actions)
 
@@ -92,23 +92,20 @@ if __name__ == '__main__':
     epsilon_histories = []
     n_runs = config.n_runs
     best_q_params = [None, None]
-    num_agents = 2
+    num_agents = 4
     
     for i in range(n_runs):
         
         agents = [
             PDQAgent(num_states=2, num_actions=2, num_agents=num_agents),
-            # CAgent(num_states=2, num_actions=2, num_agents=num_agents),
-            DAgent(num_states=2, num_actions=2, num_agents=num_agents),
+            CAgent(num_states=2, num_actions=2, num_agents=num_agents),
+            # DAgent(num_states=2, num_actions=2, num_agents=num_agents),
             # PDQAgent(num_states=2, num_actions=2, num_agents=num_agents),
-            # TitForTatAgent(num_states=2, num_actions=2, num_agents=num_agents),
+            DAgent(num_states=2, num_actions=2, num_agents=num_agents),
+            TitForTatAgent(num_states=2, num_actions=2, num_agents=num_agents),
         ]
 
-        # if best_q_params[0] is not None:
-        #     agents[0].set_params(best_q_params[0])
-        #     agents[1].set_params(best_q_params[1])
-
-        env = make_env(agents, render_mode=False)
+        env = make_env(agents, render_mode=config.render_mode)
         config.update_action_space(env.action_space.n)
         config.update_observation_space(len(env.reset()[0]))
 
@@ -120,15 +117,13 @@ if __name__ == '__main__':
         
         # print('Run {}: Best train reward: {}, mean eval reward: {}, std eval reward: {}'.format(i, bestreward, np.mean(eval_rewards), np.std(eval_rewards)))
         env.close()
-        print('Run {}: Agent 0 params:'.format(i))
-        print(agents[0].get_params())
         histories.append(history)
-        epsilon_histories += agents[0].epsilon_histories
+        if agents[0].name == 'Q-Learning':
+            print('Run {}: Agent 0 params:'.format(i))
+            print(agents[0].get_params())
+            epsilon_histories += agents[0].epsilon_histories
 
         # determinisitcs.append(determinisitc)
-
-        # best_q_params = [agents[0].get_params(), agents[1].get_params()] # remove
-
 
     print(np.array(histories).shape) # (5, 1000, 2, 2) (n_runs, num_episodes, num_agents, num_agents)
 
@@ -140,12 +135,14 @@ if __name__ == '__main__':
     for agent in range(num_agents):
         plt.plot(sum_rewards_per_agent[:, agent], label='Agent {}'.format(agents[agent].name))
         plt.legend()
-    # plot epsilon
-    
     plt.vlines(np.arange(n_runs)*config.num_episodes, np.min(sum_rewards_per_agent), np.max(sum_rewards_per_agent), colors='k', linestyles='dashed')
     plt.show()
-    plt.plot(epsilon_histories, label='epsilon', color='g')
-    plt.show()
+        
+    # plot epsilon
+    
+    if agents[0].name == 'Q-Learning':
+        plt.plot(epsilon_histories, label='epsilon', color='g')
+        plt.show()
     # for run in range(n_runs):
     #     sum_rewards_per_agent = np.sum(histories[run], axis=-1)
     #     for agent in range(num_agents):

@@ -4,7 +4,7 @@ class config:
     
     # env = 'CartPole-v1'
     env = 'PrisonersDilemmaMA'
-    render_mode = None
+    render_mode = False
 
     observation_space = None
     action_space = None
@@ -12,8 +12,8 @@ class config:
     discretization = 30
     num_states = None
 
-    num_episodes = 1000
-    n_runs = 3
+    num_episodes = 100
+    n_runs = 5
 
     def update_observation_space(observation_space):
         config.observation_space = observation_space
