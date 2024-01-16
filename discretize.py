@@ -14,6 +14,8 @@ def discretize_state(observation):
         return discretize_cartpole_state(observation)
     elif config.env == 'MountainCar-v0':
         return discretize_mountaincar_state(observation)
+    elif config.env == 'PrisonersDilemmaMA':
+         return observation
     
 def discretize_mountaincar_state(observation):
             

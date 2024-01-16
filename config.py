@@ -2,7 +2,8 @@ import pprint
 
 class config:
     
-    env = 'CartPole-v1'
+    # env = 'CartPole-v1'
+    env = 'PrisonersDilemmaMA'
     render_mode = None
 
     observation_space = None
@@ -11,7 +12,8 @@ class config:
     discretization = 30
     num_states = None
 
-    num_episodes = 3000
+    num_episodes = 1000
+    n_runs = 3
 
     def update_observation_space(observation_space):
         config.observation_space = observation_space
