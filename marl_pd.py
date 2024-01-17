@@ -128,7 +128,7 @@ if __name__ == '__main__':
     histories = []
     epsilon_histories = []
     n_runs = config.n_runs
-    num_agents = 4
+    num_agents = 2
     
     for i in range(n_runs):
         
@@ -138,8 +138,8 @@ if __name__ == '__main__':
             # PDQAgent(num_states=2, num_actions=2, num_agents=num_agents),
             # PDQAgent(num_states=2, num_actions=2, num_agents=num_agents),
             # PDQAgent(num_states=2, num_actions=2, num_agents=num_agents),
-            CAgent(num_states=2, num_actions=2, num_agents=num_agents),
-            DAgent(num_states=2, num_actions=2, num_agents=num_agents),
+            # CAgent(num_states=2, num_actions=2, num_agents=num_agents),
+            # DAgent(num_states=2, num_actions=2, num_agents=num_agents),
             # PDQAgent(num_states=2, num_actions=2, num_agents=num_agents),
             # DAgent(num_states=2, num_actions=2, num_agents=num_agents),
             TitForTatAgent(num_states=2, num_actions=2, num_agents=num_agents),
