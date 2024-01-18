@@ -59,12 +59,11 @@ class PDQAgent(object):
 
     def _learn(self, states, actions, rewards, next_states, next_actions):
         # update value function
-        # print all shapes of inputs
 
         for agent in range(self.num_agents):
             if states[agent] is not None and rewards[agent] is not None:
                 self.q_visit_count[agent, states[agent], actions[agent]] += 1
-                target = rewards[agent] + self.gamma * np.max(self.q[agent, next_states[agent], next_actions[agent]])
+                target = rewards[agent] + self.gamma * np.max(self.q[agent, next_states[agent]])
                 self.q[agent, states[agent], actions[agent]] += self.alpha(agent, states[agent], actions[agent]) * (target - self.q[agent, states[agent], actions[agent]])
 
     def begin_episode(self):
@@ -73,6 +72,7 @@ class PDQAgent(object):
         self.rewards = [None]*self.num_agents
         # self.epsilon = self.epsilon_start
         pass
+
     def get_params(self):
         # return self.q, self.epsilon, self.prev_states, self.prev_actions, self.rewards
         return self.q
