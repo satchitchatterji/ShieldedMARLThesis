@@ -1,12 +1,12 @@
 import numpy as np
 
 class PDSARSAAgent(object):
-    def __init__(self, num_states, num_actions, num_agents):
+    def __init__(self, num_states, num_actions):
         self.observation_type = 'discrete'
         self.action_type = 'discrete'
     
-        self.q = np.zeros((num_agents, num_states, num_actions))
-        self.q_visit_count = np.zeros(self.q.shape)
+        self.q = None
+        self.q_visit_count = None
 
         self.gamma = 0.2
         self.epsilon_start = 0.6
@@ -16,11 +16,11 @@ class PDSARSAAgent(object):
         
         self.num_states = num_states
         self.num_actions = num_actions
-        self.num_agents = num_agents
+        self.num_agents = None
 
-        self.prev_states = [None]*self.num_agents
-        self.prev_actions = [None]*self.num_agents
-        self.rewards = [None]*self.num_agents
+        self.prev_states = None
+        self.prev_actions = None
+        self.rewards = None
 
         self.eval_mode = False
 
@@ -28,7 +28,18 @@ class PDSARSAAgent(object):
 
         self.epsilon_histories = []
 
+    def update_n_agents(self, n_agents):
+        self.num_agents = n_agents
+        self.prev_states = [None]*self.num_agents
+        self.prev_actions = [None]*self.num_agents
+        self.rewards = [None]*self.num_agents
+        self.q = np.zeros((self.num_agents, self.num_states, self.num_actions))
+        self.q_visit_count = np.zeros(self.q.shape)
+
     def act(self, states):
+        if self.num_agents is None:
+            raise Exception("Number of agents not set. Call update_n_agents() first.")
+        
         actions = []
         for agent in range(self.num_agents):
             actions.append(self.act_single(states, agent))
