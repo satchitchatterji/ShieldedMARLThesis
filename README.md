@@ -14,7 +14,7 @@ This repository is meant to store code that I use to pracitce various themes whi
 - q_agent.py : Q-Learning agent for gym environements
 - sarsa_agent.py : SARSA-Learning agent for gym environments
 
-# MARL Practice
+## MARL Practice
 - marl_pd.py : main code based on control.py using the PrisonersDilemmaMAEnv, but also includes plotting code
 - prisoners_dilemma_ma.py : environment with similar API to gym, can host _n_ agents for any normal form game
 - always_c_agent.py : classical agent for iterated PD: _Always Cooperate_
