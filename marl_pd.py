@@ -139,18 +139,21 @@ if __name__ == '__main__':
     for i in range(n_runs):
         
         agents = [
-            # PDQAgent(num_states=2, num_actions=2, num_agents=num_agents),
-            PDQAgent(num_states=2, num_actions=2, num_agents=num_agents),
-            PDSARSAAgent(num_states=2, num_actions=2, num_agents=num_agents),
-            # PDQAgent(num_states=2, num_actions=2, num_agents=num_agents),
-            # PDQAgent(num_states=2, num_actions=2, num_agents=num_agents),
-            # PDQAgent(num_states=2, num_actions=2, num_agents=num_agents),
-            # CAgent(num_states=2, num_actions=2, num_agents=num_agents),
-            # DAgent(num_states=2, num_actions=2, num_agents=num_agents),
-            # PDQAgent(num_states=2, num_actions=2, num_agents=num_agents),
-            DAgent(num_states=2, num_actions=2, num_agents=num_agents),
-            # TitForTatAgent(num_states=2, num_actions=2, num_agents=num_agents),
+            PDQAgent(num_states=2, num_actions=2),
+            # PDSARSAAgent(num_states=2, num_actions=2),
+            CAgent(num_states=2, num_actions=2),
+            CAgent(num_states=2, num_actions=2),
+            CAgent(num_states=2, num_actions=2),
+            CAgent(num_states=2, num_actions=2),
+            CAgent(num_states=2, num_actions=2),
+            # DAgent(num_states=2, num_actions=2),
+            # TitForTatAgent(num_states=2, num_actions=2),
+            # RandomAgent(num_states=2, num_actions=2)
         ]
+
+        num_agents = len(agents)
+        for agent in agents:
+            agent.update_n_agents(num_agents)
 
         env = make_env(agents, render_mode=config.render_mode)
         config.update_action_space(env.action_space.n)
@@ -181,11 +184,11 @@ if __name__ == '__main__':
     sum_rewards_per_agent = (np.sum(histories, axis=-1)/env.spec.max_episode_steps)/(num_agents-1)
     for agent in range(num_agents):
         plt.plot(sum_rewards_per_agent[:, agent], label='Agent {}'.format(agents[agent].name))
-        plt.legend()
-    plt.vlines(np.arange(n_runs)*config.num_episodes, np.min(sum_rewards_per_agent), np.max(sum_rewards_per_agent), colors='k', linestyles='dashed')
-    plt.title("Utility per Agent per Episode")
+    plt.vlines(np.arange(n_runs)*config.num_episodes, np.min(sum_rewards_per_agent), np.max(sum_rewards_per_agent), colors='k', linestyles='dashed', label="Reset point")
+    plt.title("Mean Utility per Agent per Episode")
     plt.xlabel("Episodes")
     plt.ylabel("Utility attained per opponent")
+    plt.legend()
     plt.show()
     
     # # plot epsilon
@@ -195,11 +198,23 @@ if __name__ == '__main__':
     #     plt.show()
 
     # plot sum of all agents' rewards per run
-    summed_histories = np.sum(sum_rewards_per_agent, axis=-1)
+    sum_rewards_per_agent_all_games = (np.sum(histories, axis=-1)/env.spec.max_episode_steps)
+    summed_histories = np.sum(sum_rewards_per_agent_all_games, axis=-1)
     plt.plot(summed_histories)
-    plt.vlines(np.arange(n_runs)*config.num_episodes, np.min(summed_histories), np.max(summed_histories), colors='k', linestyles='dashed')
-    # plt.legend()
-    plt.title("Social Welfare")
+    plt.vlines(np.arange(n_runs)*config.num_episodes, np.min(summed_histories), np.max(summed_histories), colors='k', linestyles='dashed', label="Reset point")
+    plt.legend()
+    plt.title("Mean Social Welfare for All Games per Episode")
+    plt.xlabel("Episodes")
+    plt.ylabel("Utility")
+    plt.show()
+
+    # n choose 2 games
+    total_games_per_episode = num_agents*(num_agents-1)/2
+    summed_histories = summed_histories/total_games_per_episode
+    plt.plot(summed_histories)
+    plt.vlines(np.arange(n_runs)*config.num_episodes, np.min(summed_histories), np.max(summed_histories), colors='k', linestyles='dashed', label="Reset point")
+    plt.legend()
+    plt.title("Mean Social Welfare per Episode per Game")
     plt.xlabel("Episodes")
     plt.ylabel("Utility")
     plt.show()

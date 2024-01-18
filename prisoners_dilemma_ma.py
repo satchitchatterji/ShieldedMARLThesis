@@ -4,7 +4,7 @@ import numpy as np
 
 class spec:
     def __init__(self):
-        self.max_episode_steps = 100
+        self.max_episode_steps = 1000
 
 class action_space:
     def __init__(self, n):
