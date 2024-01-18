@@ -30,12 +30,17 @@ def run_episode(env, agents, max_steps):
 
         for i, agent in enumerate(agents):
             # Optimize individual reward
-            agent.update_reward(rewards[i])
+            # agent.update_reward(rewards[i])
 
             # Optimize difference in rewards
             # equal_reward = (np.max(rewards) - np.min(rewards))**2
             # er_matrix = np.full((len(agents),len(agents)), equal_reward) - np.identity(len(agents))*equal_reward
             # agent.update_reward(er_matrix[i])
+
+            # Optimize social welfare
+            equal_reward = np.sum(rewards)
+            er_matrix = np.full((len(agents),len(agents)), equal_reward) - np.identity(len(agents))*equal_reward
+            agent.update_reward(er_matrix[i])
 
         # print(rewards, "\n")
         
@@ -129,12 +134,12 @@ if __name__ == '__main__':
     epsilon_histories = []
     n_runs = config.n_runs
     num_agents = 2
-    
+
     for i in range(n_runs):
         
         agents = [
             PDQAgent(num_states=2, num_actions=2, num_agents=num_agents),
-            # PDQAgent(num_states=2, num_actions=2, num_agents=num_agents),
+            PDQAgent(num_states=2, num_actions=2, num_agents=num_agents),
             # PDQAgent(num_states=2, num_actions=2, num_agents=num_agents),
             # PDQAgent(num_states=2, num_actions=2, num_agents=num_agents),
             # PDQAgent(num_states=2, num_actions=2, num_agents=num_agents),
@@ -142,7 +147,7 @@ if __name__ == '__main__':
             # DAgent(num_states=2, num_actions=2, num_agents=num_agents),
             # PDQAgent(num_states=2, num_actions=2, num_agents=num_agents),
             # DAgent(num_states=2, num_actions=2, num_agents=num_agents),
-            TitForTatAgent(num_states=2, num_actions=2, num_agents=num_agents),
+            # TitForTatAgent(num_states=2, num_actions=2, num_agents=num_agents),
         ]
 
         env = make_env(agents, render_mode=config.render_mode)
@@ -170,19 +175,33 @@ if __name__ == '__main__':
     # concatenate runs
     histories = np.concatenate(histories, axis=0)
     print(histories.shape) #
-    # plot concatenated histories in one plot and put a vertical line to sepatate runs
-    sum_rewards_per_agent = np.sum(histories, axis=-1)/env.spec.max_episode_steps/num_agents
+    # # plot concatenated histories in one plot and put a vertical line to sepatate runs
+    sum_rewards_per_agent = (np.sum(histories, axis=-1)/env.spec.max_episode_steps)/(num_agents-1)
     for agent in range(num_agents):
         plt.plot(sum_rewards_per_agent[:, agent], label='Agent {}'.format(agents[agent].name))
         plt.legend()
     plt.vlines(np.arange(n_runs)*config.num_episodes, np.min(sum_rewards_per_agent), np.max(sum_rewards_per_agent), colors='k', linestyles='dashed')
+    plt.title("Utility per Agent per Episode")
+    plt.xlabel("Episodes")
+    plt.ylabel("Utility attained per opponent")
     plt.show()
-        
-    # plot epsilon
     
-    if agents[0].name == 'Q-Learning':
-        plt.plot(epsilon_histories, label='epsilon', color='g')
-        plt.show()
+    # # plot epsilon
+    
+    # if agents[0].name == 'Q-Learning':
+    #     plt.plot(epsilon_histories, label='epsilon', color='g')
+    #     plt.show()
+
+    # plot sum of all agents' rewards per run
+    summed_histories = np.sum(sum_rewards_per_agent, axis=-1)
+    plt.plot(summed_histories)
+    plt.vlines(np.arange(n_runs)*config.num_episodes, np.min(summed_histories), np.max(summed_histories), colors='k', linestyles='dashed')
+    # plt.legend()
+    plt.title("Social Welfare")
+    plt.xlabel("Episodes")
+    plt.ylabel("Utility")
+    plt.show()
+
     # for run in range(n_runs):
     #     sum_rewards_per_agent = np.sum(histories[run], axis=-1)
     #     for agent in range(num_agents):
