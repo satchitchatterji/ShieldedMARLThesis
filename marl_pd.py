@@ -12,6 +12,7 @@ from always_d_agent import DAgent
 from random_agent import RandomAgent
 from tittat_agent import TitForTatAgent
 from pd_q_agent import PDQAgent
+from pd_sarsa_agent import PDSARSAAgent
 
 def run_episode(env, agents, max_steps):
     observation = env.reset()[0]
@@ -89,7 +90,7 @@ def run_synch(env, agents, run_fn, num_episodes):
     for e in range(num_episodes):
         
         for agent in agents:
-            if agent.name == 'Q-Learning':
+            if agent.name == 'Q-Learning' or agent.name == 'SARSA':
                 if best_q_params is not None:
                     agent.set_params(best_q_params)
 
@@ -103,7 +104,7 @@ def run_synch(env, agents, run_fn, num_episodes):
 
         agent_params = np.zeros(agents[0].get_params().shape)
         for agent in agents:
-            if agent.name == 'Q-Learning':
+            if agent.name == 'Q-Learning' or agent.name == 'SARSA':
                 agent_params += agent.get_params()
     
         best_q_params = agent_params/num_agents
@@ -133,20 +134,21 @@ if __name__ == '__main__':
     histories = []
     epsilon_histories = []
     n_runs = config.n_runs
-    num_agents = 2
+    num_agents = 3
 
     for i in range(n_runs):
         
         agents = [
+            # PDQAgent(num_states=2, num_actions=2, num_agents=num_agents),
             PDQAgent(num_states=2, num_actions=2, num_agents=num_agents),
-            PDQAgent(num_states=2, num_actions=2, num_agents=num_agents),
+            PDSARSAAgent(num_states=2, num_actions=2, num_agents=num_agents),
             # PDQAgent(num_states=2, num_actions=2, num_agents=num_agents),
             # PDQAgent(num_states=2, num_actions=2, num_agents=num_agents),
             # PDQAgent(num_states=2, num_actions=2, num_agents=num_agents),
             # CAgent(num_states=2, num_actions=2, num_agents=num_agents),
             # DAgent(num_states=2, num_actions=2, num_agents=num_agents),
             # PDQAgent(num_states=2, num_actions=2, num_agents=num_agents),
-            # DAgent(num_states=2, num_actions=2, num_agents=num_agents),
+            DAgent(num_states=2, num_actions=2, num_agents=num_agents),
             # TitForTatAgent(num_states=2, num_actions=2, num_agents=num_agents),
         ]
 
@@ -163,7 +165,7 @@ if __name__ == '__main__':
         # print('Run {}: Best train reward: {}, mean eval reward: {}, std eval reward: {}'.format(i, bestreward, np.mean(eval_rewards), np.std(eval_rewards)))
         env.close()
         histories.append(history)
-        if agents[0].name == 'Q-Learning':
+        if agents[0].name == 'Q-Learning' or agents[0].name == 'SARSA':
             print('Run {}: Agent 0 params:'.format(i))
             print(agents[0].get_params())
             epsilon_histories += agents[0].epsilon_histories
