@@ -15,7 +15,7 @@ This repository is meant to store code that I use to pracitce various themes whi
 - sarsa_agent.py : SARSA-Learning agent for gym environments
 
 ## MARL Practice
-- marl_pd.py : main code based on control.py using the PrisonersDilemmaMAEnv, but also includes plotting code
+- marl_pd.py : main code based on control.py using the PrisonersDilemmaMAEnv, but also includes plotting code. It currently supports optimizing for selfish utility, social welfare and maximum and minimum utility disparity.
 - prisoners_dilemma_ma.py : environment with similar API to gym, can host _n_ agents for any normal form game
 - always_c_agent.py : classical agent for iterated PD: _Always Cooperate_
 - always_d_agent.p : classical agent for iterated PD: _Always Defect_
