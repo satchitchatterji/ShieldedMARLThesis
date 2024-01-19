@@ -31,7 +31,7 @@ def run_episode(env, agents, max_steps):
 
         for i, agent in enumerate(agents):
             # Optimize individual reward
-            # agent.update_reward(rewards[i])
+            agent.update_reward(rewards[i])
 
             # Optimize social welfare
             # equal_reward = np.sum(rewards)
@@ -39,9 +39,9 @@ def run_episode(env, agents, max_steps):
             # agent.update_reward(er_matrix[i])
 
             # Optimize minimal difference in rewards
-            equal_reward = -(np.max(rewards) - np.min(rewards))**2
-            er_matrix = np.full((len(agents),len(agents)), equal_reward) - np.identity(len(agents))*equal_reward
-            agent.update_reward(er_matrix[i])
+            # equal_reward = -(np.max(rewards) - np.min(rewards))**2
+            # er_matrix = np.full((len(agents),len(agents)), equal_reward) - np.identity(len(agents))*equal_reward
+            # agent.update_reward(er_matrix[i])
 
 
         # print(rewards, "\n")
@@ -141,13 +141,14 @@ if __name__ == '__main__':
         
         agents = [
             PDQAgent(num_states=2, num_actions=2),
+            PDQAgent(num_states=2, num_actions=2),
             # PDSARSAAgent(num_states=2, num_actions=2),
             # CAgent(num_states=2, num_actions=2),
             # CAgent(num_states=2, num_actions=2),
             # CAgent(num_states=2, num_actions=2),
             # CAgent(num_states=2, num_actions=2),
             # CAgent(num_states=2, num_actions=2),
-            DAgent(num_states=2, num_actions=2),
+            # DAgent(num_states=2, num_actions=2),
             # TitForTatAgent(num_states=2, num_actions=2),
             # RandomAgent(num_states=2, num_actions=2)
         ]

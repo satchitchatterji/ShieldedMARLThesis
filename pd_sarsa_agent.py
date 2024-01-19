@@ -39,7 +39,7 @@ class PDSARSAAgent(object):
     def act(self, states):
         if self.num_agents is None:
             raise Exception("Number of agents not set. Call update_n_agents() first.")
-        
+            
         actions = []
         for agent in range(self.num_agents):
             actions.append(self.act_single(states, agent))

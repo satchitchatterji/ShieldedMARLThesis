@@ -24,6 +24,12 @@ class PrisonersDilemmaMAEnv:
 
         self.render_mode = render_mode
 
+        # utilities is a 2D array of shape (4, 2)
+        # NFG format: {TL, TR, BL, BR}
+        # self.utilities = [[8,8], [0,10], [10,0], [4,4]] # prisoner's dilemma, [cooperate, defect]
+        # self.utilities = [[4,4], [0,3], [3,0], [2,2]] # stag hunt, [stag, hare]
+        self.utilities = [[0,0], [7,2], [2,7], [6,6]] # chicken, [straight, swerve]
+        
     def reset(self):
         self.state = np.full((self.n_agents, self.n_agents), None)
         return (self.state,)
@@ -42,17 +48,17 @@ class PrisonersDilemmaMAEnv:
                 if i == j:
                     continue
                 if actions[i][j] == 0 and actions[j][i] == 0:
-                    rewards[i][j] = 8
-                    rewards[j][i] = 8
+                    rewards[i][j] = self.utilities[0][0]
+                    rewards[j][i] = self.utilities[0][1]
                 elif actions[i][j] == 0 and actions[j][i] == 1:
-                    rewards[i][j] = 0
-                    rewards[j][i] = 10
+                    rewards[i][j] = self.utilities[1][0]
+                    rewards[j][i] = self.utilities[1][1]
                 elif actions[i][j] == 1 and actions[j][i] == 0:
-                    rewards[i][j] = 10
-                    rewards[j][i] = 0
+                    rewards[i][j] = self.utilities[2][0]
+                    rewards[j][i] = self.utilities[2][1]
                 elif actions[i][j] == 1 and actions[j][i] == 1:
-                    rewards[i][j] = 4
-                    rewards[j][i] = 4
+                    rewards[i][j] = self.utilities[3][0]
+                    rewards[j][i] = self.utilities[3][1]
 
         self.state = actions
         
