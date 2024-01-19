@@ -16,7 +16,7 @@ This repository is meant to store code that I use to pracitce various themes whi
 
 ## MARL Practice
 - marl_pd.py : main code based on control.py using the PrisonersDilemmaMAEnv, but also includes plotting code. It currently supports optimizing for selfish utility, social welfare and maximum and minimum utility disparity.
-- prisoners_dilemma_ma.py : environment with similar API to gym, can host _n_ agents for any normal form game
+- prisoners_dilemma_ma.py : environment with similar API to gym, can host _n_ agents for any 2-action normal form game (TODO: change to support _a_ action games). PD, chicken, stag implemented.
 - always_c_agent.py : classical agent for iterated PD: _Always Cooperate_
 - always_d_agent.p : classical agent for iterated PD: _Always Defect_
 - pd_q_agent.py : Q-Learning agent for MA NFG environments, compatible with PrisonersDilemmaMAEnv
