@@ -23,3 +23,8 @@ This repository is meant to store code that I use to pracitce various themes whi
 - pd_sarsa_agent.py : SARSA-Learning agent for MA NFG environments, compatible with PrisonersDilemmaMAEnv
 - random_agent.py : test agent for iterated PD: _Random_
 - tittat_agent.py : classical agent for iterated PD: _Tit for Tat_
+
+## TODO
+- DQN Agent
+- PPO Agent
+- Semantic loss

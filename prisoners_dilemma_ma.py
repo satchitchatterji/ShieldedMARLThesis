@@ -26,9 +26,9 @@ class PrisonersDilemmaMAEnv:
 
         # utilities is a 2D array of shape (4, 2)
         # NFG format: {TL, TR, BL, BR}
-        # self.utilities = [[8,8], [0,10], [10,0], [4,4]] # prisoner's dilemma, [cooperate, defect]
+        self.utilities = [[8,8], [0,10], [10,0], [4,4]] # prisoner's dilemma, [cooperate, defect]
         # self.utilities = [[4,4], [0,3], [3,0], [2,2]] # stag hunt, [stag, hare]
-        self.utilities = [[0,0], [7,2], [2,7], [6,6]] # chicken, [straight, swerve]
+        # self.utilities = [[0,0], [7,2], [2,7], [6,6]] # chicken, [straight, swerve]
         
     def reset(self):
         self.state = np.full((self.n_agents, self.n_agents), None)
