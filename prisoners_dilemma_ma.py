@@ -24,6 +24,8 @@ class PrisonersDilemmaMAEnv:
 
         self.render_mode = render_mode
 
+        self.state_history = []
+
         # utilities is a 2D array of shape (4, 2)
         # NFG format: {TL, TR, BL, BR}
         self.utilities = [[8,8], [0,10], [10,0], [4,4]] # prisoner's dilemma, [cooperate, defect]
@@ -61,6 +63,7 @@ class PrisonersDilemmaMAEnv:
                     rewards[j][i] = self.utilities[3][1]
 
         self.state = actions
+        self.state_history.append(self.state)
         
         if self.render_mode:
             self.render()

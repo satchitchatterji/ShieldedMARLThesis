@@ -4,6 +4,7 @@ class CAgent():
     def __init__(self, num_states, num_actions):
         self.observation_type = 'discrete'
         self.action_type = 'discrete'
+        self.learning = False
     
         self.num_states = num_states
         self.num_actions = num_actions

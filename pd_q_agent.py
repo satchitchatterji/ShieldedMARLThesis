@@ -4,6 +4,7 @@ class PDQAgent(object):
     def __init__(self, num_states, num_actions):
         self.observation_type = 'discrete'
         self.action_type = 'discrete'
+        self.learning = True
     
         self.q = None
         self.q_visit_count = None

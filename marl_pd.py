@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import seaborn as sns
 import numpy as np
 
 from prisoners_dilemma_ma import PrisonersDilemmaMAEnv as make_env
@@ -14,6 +15,56 @@ from tittat_agent import TitForTatAgent
 from pd_q_agent import PDQAgent
 from pd_sarsa_agent import PDSARSAAgent
 
+def compute_semantic_reward(env, agents, rewards):
+    # input: rewards is a 2D array of shape (num_agents, num_agents)
+    # output: semantic_rewards is a 2D array of shape (num_agents, num_agents)
+    # semantic_rewards[i][j] is the semantic reward of agent i against agent j
+    # L_C=-\sum_{x,y,t}\log(P(x,y,t)|C(y,x,t-1))
+
+    for agent in agents:
+        if agent.learning:
+            pass
+
+
+def compute_psl_reward(env, agents, rewards):
+    # input: rewards is a 2D array of shape (num_agents, num_agents)
+    # output: psl_rewards is a 2D array of shape (num_agents, num_agents)
+    # psl_rewards[i][j] is the psl reward of agent i against agent j
+    # For agents x and y, L_psl = \min(1-C(y,x,t-1)+C(x,y,t),1)
+
+    psl_rewards = np.zeros(rewards.shape)
+    for a, agent in enumerate(agents):
+        agent_reward = rewards[a]
+        if not agent.learning:
+            psl_rewards[a] = np.zeros(rewards.shape[0])
+        else:
+            for o, opponent in enumerate(agents):
+                if o != a:
+                    opponent_prev_action = 1 - opponent.prev_actions[a] # 1 if opponent cooperated, 0 if opponent defected
+                    agent_action = 1
+                    psl_rewards[a][o] = min(1 - opponent_prev_action + agent_action, 1)
+                    
+def compute_l_reward(env, agemnts, rewards):
+    # input: rewards is a 2D array of shape (num_agents, num_agents)
+    # output: l_rewards is a 2D array of shape (num_agents, num_agents)
+    # l_rewards[i][j] is the l reward of agent i against agent j
+    l_rewards = np.zeros(rewards.shape)
+    for a, agent in enumerate(agents):
+        agent_reward = rewards[a]
+        if not agent.learning:
+            l_rewards[a] = np.zeros(rewards.shape[0])
+        else:
+            for o, opponent in enumerate(agents):
+                if o != a:
+                    # cooperate = 1, defect = 0
+                    opponent_prev_action = 1-opponent.prev_actions[a]
+                    agent_action = 1-agent.prev_actions[o]
+                    # o -> a
+                    if not opponent_prev_action or agent_action:
+                        l_rewards[a][o] = 1
+    return l_rewards
+
+
 def run_episode(env, agents, max_steps):
     observation = env.reset()[0]
     total_agent_rewards = np.zeros((len(agents), len(agents)))
@@ -28,7 +79,9 @@ def run_episode(env, agents, max_steps):
             actions.append(agent.act(np.array(observation).T[i]))
         
         observation, rewards, terminated, truncated, info = env.step(actions)
-
+        l_rewards = compute_l_reward(env, agents, rewards)
+        rewards += l_rewards
+        
         for i, agent in enumerate(agents):
             # Optimize individual reward
             agent.update_reward(rewards[i])
@@ -135,8 +188,7 @@ if __name__ == '__main__':
     histories = []
     epsilon_histories = []
     n_runs = config.n_runs
-    num_agents = 3
-
+    all_state_histories = []
     for i in range(n_runs):
         
         agents = [
@@ -176,6 +228,11 @@ if __name__ == '__main__':
             epsilon_histories += agents[0].epsilon_histories
         
         # determinisitcs.append(determinisitc)
+            
+        all_state_histories.append(env.state_history)
+
+        
+
 
     print(np.array(histories).shape) # (5, 1000, 2, 2) (n_runs, num_episodes, num_agents, num_agents)
 
@@ -199,18 +256,18 @@ if __name__ == '__main__':
     #     plt.plot(epsilon_histories, label='epsilon', color='g')
     #     plt.show()
 
-    # plot sum of all agents' rewards per run
+    # # plot sum of all agents' rewards per run
     sum_rewards_per_agent_all_games = (np.sum(histories, axis=-1)/env.spec.max_episode_steps)
     summed_histories = np.sum(sum_rewards_per_agent_all_games, axis=-1)
-    plt.plot(summed_histories)
-    plt.vlines(np.arange(n_runs)*config.num_episodes, np.min(summed_histories), np.max(summed_histories), colors='k', linestyles='dashed', label="Reset point")
-    plt.legend()
-    plt.title("Mean Social Welfare for All Games per Episode")
-    plt.xlabel("Episodes")
-    plt.ylabel("Utility")
-    plt.show()
+    # plt.plot(summed_histories)
+    # plt.vlines(np.arange(n_runs)*config.num_episodes, np.min(summed_histories), np.max(summed_histories), colors='k', linestyles='dashed', label="Reset point")
+    # plt.legend()
+    # plt.title("Mean Social Welfare for All Games per Episode")
+    # plt.xlabel("Episodes")
+    # plt.ylabel("Utility")
+    # plt.show()
 
-    # n choose 2 games
+    # # n choose 2 games
     total_games_per_episode = num_agents*(num_agents-1)/2
     summed_histories = summed_histories/total_games_per_episode
     plt.plot(summed_histories)
@@ -229,3 +286,19 @@ if __name__ == '__main__':
     #     plt.show()
 
     print([agent.name for agent in agents])
+
+    # plot heatmaps of rewards for each run
+    fig, axs = plt.subplots(1, n_runs, figsize=(10, 5))
+
+    all_state_histories = np.array(all_state_histories)    
+    for run in range(n_runs):
+        this_run_state_history = all_state_histories[run][-100:, :, :]
+        mean_actions = this_run_state_history.mean(axis=0)
+        # sns heatmaps
+        sns.heatmap(mean_actions, annot=True, fmt=".2f", ax=axs[run], cmap='coolwarm')
+        axs[run].set_title("Run {}".format(run))
+        axs[run].set_xlabel("Agent")
+        axs[run].set_ylabel("Opponent")
+
+    fig.tight_layout()
+    plt.show()    
