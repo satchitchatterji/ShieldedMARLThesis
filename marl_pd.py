@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+from matplotlib.colors import LinearSegmentedColormap
 import seaborn as sns
 import numpy as np
 
@@ -14,6 +15,8 @@ from random_agent import RandomAgent
 from tittat_agent import TitForTatAgent
 from pd_q_agent import PDQAgent
 from pd_sarsa_agent import PDSARSAAgent
+
+l_reward_factor = 20
 
 def compute_semantic_reward(env, agents, rewards):
     # input: rewards is a 2D array of shape (num_agents, num_agents)
@@ -57,11 +60,12 @@ def compute_l_reward(env, agemnts, rewards):
             for o, opponent in enumerate(agents):
                 if o != a:
                     # cooperate = 1, defect = 0
-                    opponent_prev_action = 1-opponent.prev_actions[a]
-                    agent_action = 1-agent.prev_actions[o]
+                    opponent_prev_action = 1-env.state_history[-1][o][a]
+                    # agent_action = 1-env.state_history[-1][a][o]
+                    agent_action = 1
                     # o -> a
-                    if not opponent_prev_action or agent_action:
-                        l_rewards[a][o] = 1
+                    if opponent_prev_action:
+                        l_rewards[o][a] = 1
     return l_rewards
 
 
@@ -80,7 +84,7 @@ def run_episode(env, agents, max_steps):
         
         observation, rewards, terminated, truncated, info = env.step(actions)
         l_rewards = compute_l_reward(env, agents, rewards)
-        rewards += l_rewards
+        rewards += l_reward_factor*l_rewards
         
         for i, agent in enumerate(agents):
             # Optimize individual reward
@@ -189,16 +193,20 @@ if __name__ == '__main__':
     epsilon_histories = []
     n_runs = config.n_runs
     all_state_histories = []
+    all_rewards_histories = []
+
     for i in range(n_runs):
         
         agents = [
             PDQAgent(num_states=2, num_actions=2),
-            PDQAgent(num_states=2, num_actions=2),
-            PDSARSAAgent(num_states=2, num_actions=2),
+            # PDQAgent(num_states=2, num_actions=2),
+            # PDQAgent(num_states=2, num_actions=2),
+            # PDQAgent(num_states=2, num_actions=2),
+            # PDSARSAAgent(num_states=2, num_actions=2),
             # CAgent(num_states=2, num_actions=2),
             # CAgent(num_states=2, num_actions=2),
             # CAgent(num_states=2, num_actions=2),
-            # CAgent(num_states=2, num_actions=2),
+            CAgent(num_states=2, num_actions=2),
             # CAgent(num_states=2, num_actions=2),
             # DAgent(num_states=2, num_actions=2),
             # TitForTatAgent(num_states=2, num_actions=2),
@@ -230,6 +238,7 @@ if __name__ == '__main__':
         # determinisitcs.append(determinisitc)
             
         all_state_histories.append(env.state_history)
+        all_rewards_histories.append(env.rewards_history)
 
         
 
@@ -292,13 +301,33 @@ if __name__ == '__main__':
 
     all_state_histories = np.array(all_state_histories)    
     for run in range(n_runs):
-        this_run_state_history = all_state_histories[run][-100:, :, :]
+        this_run_state_history = all_state_histories[run][-10:, :, :]
+        print(this_run_state_history[-1])
         mean_actions = this_run_state_history.mean(axis=0)
-        # sns heatmaps
-        sns.heatmap(mean_actions, annot=True, fmt=".2f", ax=axs[run], cmap='coolwarm')
+        # green to red heatmap
+        sns.heatmap(mean_actions, ax=axs[run], annot=True, cmap="RdYlGn_r")
         axs[run].set_title("Run {}".format(run))
-        axs[run].set_xlabel("Agent")
-        axs[run].set_ylabel("Opponent")
+        axs[run].set_ylabel("Agent")
+        axs[run].set_xlabel("Opponent")
+        axs[run].set_xticklabels([agent.name for agent in agents])
+        axs[run].set_yticklabels([agent.name for agent in agents])
+    fig.tight_layout()
+    plt.show()    
 
+    fig, axs = plt.subplots(1, n_runs, figsize=(10, 5))
+
+    all_rewards_histories = np.array(all_rewards_histories)    
+    for run in range(n_runs):
+        this_run_rewards_history = all_rewards_histories[run][-10:, :, :]
+        print(this_run_rewards_history[-1])
+        mean_rewards = this_run_rewards_history.mean(axis=0)
+        # sns heatmaps
+
+        sns.heatmap(mean_rewards, annot=True, fmt=".2f", ax=axs[run], cmap="RdYlGn", center=None)
+        axs[run].set_title("Run {}".format(run))
+        axs[run].set_ylabel("Agent")
+        axs[run].set_xlabel("Opponent")
+        axs[run].set_xticklabels([agent.name for agent in agents])
+        axs[run].set_yticklabels([agent.name for agent in agents])
     fig.tight_layout()
     plt.show()    

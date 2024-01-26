@@ -12,7 +12,7 @@ class CAgent():
     
         self.eval_mode = False
         self.rewards = []
-
+        
         self.name = "AlwaysC"
 
     def update_n_agents(self, n_agents):
