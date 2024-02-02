@@ -2,12 +2,12 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 import seaborn as sns
 import numpy as np
+from tqdm import trange
 
 from prisoners_dilemma_ma import PrisonersDilemmaMAEnv as make_env
 
 from discretize import *
 from config import config
-from print_rewards import *
 
 from always_c_agent import CAgent
 from always_d_agent import DAgent
@@ -15,8 +15,9 @@ from random_agent import RandomAgent
 from tittat_agent import TitForTatAgent
 from pd_q_agent import PDQAgent
 from pd_sarsa_agent import PDSARSAAgent
+from pd_deepsarsa_agent import PDDeepSARSAAgent
 
-l_reward_factor = 20
+l_reward_factor = 0
 
 def compute_semantic_reward(env, agents, rewards):
     # input: rewards is a 2D array of shape (num_agents, num_agents)
@@ -76,7 +77,7 @@ def run_episode(env, agents, max_steps):
     for agent in agents:
         agent.begin_episode()
     
-    for _ in range(max_steps):
+    for _ in trange(max_steps):
         # env.render()
         actions = []
         for i, agent in enumerate(agents):
@@ -88,7 +89,7 @@ def run_episode(env, agents, max_steps):
         
         for i, agent in enumerate(agents):
             # Optimize individual reward
-            agent.update_reward(rewards[i])
+            agent.update_reward(rewards[i], terminated or truncated)
 
             # Optimize social welfare
             # equal_reward = np.sum(rewards)
@@ -198,19 +199,13 @@ if __name__ == '__main__':
     for i in range(n_runs):
         
         agents = [
-            PDQAgent(num_states=2, num_actions=2),
-            # PDQAgent(num_states=2, num_actions=2),
-            # PDQAgent(num_states=2, num_actions=2),
-            # PDQAgent(num_states=2, num_actions=2),
-            # PDSARSAAgent(num_states=2, num_actions=2),
-            # CAgent(num_states=2, num_actions=2),
-            # CAgent(num_states=2, num_actions=2),
-            # CAgent(num_states=2, num_actions=2),
+            # RandomAgent(num_states=2, num_actions=2)
             CAgent(num_states=2, num_actions=2),
-            # CAgent(num_states=2, num_actions=2),
             # DAgent(num_states=2, num_actions=2),
             # TitForTatAgent(num_states=2, num_actions=2),
-            # RandomAgent(num_states=2, num_actions=2)
+            # PDQAgent(num_states=2, num_actions=2),
+            # PDSARSAAgent(num_states=2, num_actions=2),
+            PDDeepSARSAAgent(num_states=2, num_actions=2),
         ]
 
         num_agents = len(agents)
@@ -230,7 +225,7 @@ if __name__ == '__main__':
         # print('Run {}: Best train reward: {}, mean eval reward: {}, std eval reward: {}'.format(i, bestreward, np.mean(eval_rewards), np.std(eval_rewards)))
         env.close()
         histories.append(history)
-        if agents[0].name == 'Q-Learning' or agents[0].name == 'SARSA':
+        if agents[0].learning:
             print('Run {}: Agent 0 params:'.format(i))
             print(agents[0].get_params())
             epsilon_histories += agents[0].epsilon_histories
