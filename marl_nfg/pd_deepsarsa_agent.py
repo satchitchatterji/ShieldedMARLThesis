@@ -20,7 +20,7 @@ class PDDeepSARSAAgent(object):
         self.action_type = 'discrete'
         self.learning = True
 
-        # input: state x agent
+        # input: num_states + num_agents
         # output: Q(s,a)
         self.num_states = num_states
         self.num_actions = num_actions
@@ -66,7 +66,7 @@ class PDDeepSARSAAgent(object):
         self.prev_actions = [None]*self.num_agents
         self.rewards = [None]*self.num_agents
         # set up function approximator
-        self.n_inputs = self.num_states * self.num_agents
+        self.n_inputs = self.num_states + self.num_agents
         self.n_outputs = self.num_actions
         if self.func_approx is None:
             self.func_approx = self.init_mlp(self.n_inputs, self.num_actions)
@@ -120,7 +120,7 @@ class PDDeepSARSAAgent(object):
     def act_single(self, states, agent):
         """ Choose an action for a single agent, given the current state """
         # shape of states: (num_agents, num_states)
-        # expected input to MLP: (num_agents * num_states, 1)
+        # expected input to MLP: (num_agents + num_states, 1)
         # expected output of MLP: (num_actions, 1)
         if states[agent] is None:
             state = 0

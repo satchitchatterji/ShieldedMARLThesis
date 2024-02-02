@@ -201,7 +201,7 @@ if __name__ == '__main__':
         agents = [
             # RandomAgent(num_states=2, num_actions=2)
             CAgent(num_states=2, num_actions=2),
-            # DAgent(num_states=2, num_actions=2),
+            DAgent(num_states=2, num_actions=2),
             # TitForTatAgent(num_states=2, num_actions=2),
             # PDQAgent(num_states=2, num_actions=2),
             # PDSARSAAgent(num_states=2, num_actions=2),
