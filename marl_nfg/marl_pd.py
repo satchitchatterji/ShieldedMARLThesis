@@ -16,6 +16,7 @@ from tittat_agent import TitForTatAgent
 from pd_q_agent import PDQAgent
 from pd_sarsa_agent import PDSARSAAgent
 from pd_deepsarsa_agent import PDDeepSARSAAgent
+from pd_dqn_agent import PDDQNAgent
 
 l_reward_factor = 0
 
@@ -205,7 +206,8 @@ if __name__ == '__main__':
             # TitForTatAgent(num_states=2, num_actions=2),
             # PDQAgent(num_states=2, num_actions=2),
             # PDSARSAAgent(num_states=2, num_actions=2),
-            PDDeepSARSAAgent(num_states=2, num_actions=2),
+            # PDDeepSARSAAgent(num_states=2, num_actions=2),
+            PDDQNAgent(num_states=2, num_actions=2),
         ]
 
         num_agents = len(agents)
