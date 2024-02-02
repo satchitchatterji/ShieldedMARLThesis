@@ -24,7 +24,7 @@ class RandomAgent():
             actions.append(np.random.randint(0, self.num_actions))
         return actions
 
-    def update_reward(self, reward):
+    def update_reward(self, reward, *args, **kwargs):
         self.rewards.append(reward)
 
     def _learn(self, state, action, reward, next_state, next_action):

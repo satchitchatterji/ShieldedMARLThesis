@@ -36,7 +36,7 @@ class TitForTatAgent(object):
         # print(other_states, actions)
         return actions
                     
-    def update_reward(self, reward):
+    def update_reward(self, reward, *args, **kwargs):
         self.rewards.append(reward)
 
     def _learn(self, state, action, reward, next_state, next_action):

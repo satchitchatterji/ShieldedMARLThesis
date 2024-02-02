@@ -66,7 +66,7 @@ class PDSARSAAgent(object):
         
         return action
         
-    def update_reward(self, rewards):
+    def update_reward(self, rewards, *args, **kwargs):
         self.rewards = rewards
 
     def _learn(self, states, actions, rewards, next_states, next_actions):
