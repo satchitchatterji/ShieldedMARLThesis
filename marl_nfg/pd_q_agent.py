@@ -9,8 +9,8 @@ class PDQAgent(object):
         self.q = None
         self.q_visit_count = None
 
-        self.gamma = 0.2
-        self.epsilon_start = 0.6
+        self.gamma = 0.0
+        self.epsilon_start = 0.9
         self.epsilon_decay = 0.9995
         self.epsilon = self.epsilon_start
         self.alpha = lambda agent, state, action: 1.0 / (1.0 + self.q_visit_count[agent, state, action]) 
@@ -79,9 +79,9 @@ class PDQAgent(object):
                 self.q[agent, states[agent], actions[agent]] += self.alpha(agent, states[agent], actions[agent]) * (target - self.q[agent, states[agent], actions[agent]])
 
     def begin_episode(self):
-        self.prev_states = [None]*self.num_agents
-        self.prev_actions = [None]*self.num_agents
-        self.rewards = [None]*self.num_agents
+        # self.prev_states = [None]*self.num_agents
+        # self.prev_actions = [None]*self.num_agents
+        # self.rewards = [None]*self.num_agents
         # self.epsilon = self.epsilon_start
         pass
 

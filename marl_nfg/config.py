@@ -13,7 +13,7 @@ class config:
     num_states = None
 
     num_episodes = 10
-    n_runs = 2
+    n_runs = 5
 
     def update_observation_space(observation_space):
         config.observation_space = observation_space

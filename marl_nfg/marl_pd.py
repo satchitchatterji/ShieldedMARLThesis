@@ -16,58 +16,58 @@ from tittat_agent import TitForTatAgent
 from pd_q_agent import PDQAgent
 from pd_sarsa_agent import PDSARSAAgent
 from pd_deepsarsa_agent import PDDeepSARSAAgent
-from pd_dqn_agent import PDDQNAgent
+# from pd_dqn_agent import PDDQNAgent
 
-l_reward_factor = 0
+l_reward_factor = 10
 
-def compute_semantic_reward(env, agents, rewards):
-    # input: rewards is a 2D array of shape (num_agents, num_agents)
-    # output: semantic_rewards is a 2D array of shape (num_agents, num_agents)
-    # semantic_rewards[i][j] is the semantic reward of agent i against agent j
-    # L_C=-\sum_{x,y,t}\log(P(x,y,t)|C(y,x,t-1))
+# def compute_semantic_reward(env, agents, rewards):
+#     # input: rewards is a 2D array of shape (num_agents, num_agents)
+#     # output: semantic_rewards is a 2D array of shape (num_agents, num_agents)
+#     # semantic_rewards[i][j] is the semantic reward of agent i against agent j
+#     # L_C=-\sum_{x,y,t}\log(P(x,y,t)|C(y,x,t-1))
+#     # L_C=-\sum_{x,y,t} P(x,y,t)\log(C(y,x,t-1))
 
-    for agent in agents:
-        if agent.learning:
-            pass
+#     for agent in agents:
+#         if agent.learning:
+#             pass
 
+# def compute_psl_reward(env, agents, rewards):
+#     # input: rewards is a 2D array of shape (num_agents, num_agents)
+#     # output: psl_rewards is a 2D array of shape (num_agents, num_agents)
+#     # psl_rewards[i][j] is the psl reward of agent i against agent j
+#     # For agents x and y, L_psl = \min(1-C(y,x,t-1)+C(x,y,t),1)
 
-def compute_psl_reward(env, agents, rewards):
-    # input: rewards is a 2D array of shape (num_agents, num_agents)
-    # output: psl_rewards is a 2D array of shape (num_agents, num_agents)
-    # psl_rewards[i][j] is the psl reward of agent i against agent j
-    # For agents x and y, L_psl = \min(1-C(y,x,t-1)+C(x,y,t),1)
-
-    psl_rewards = np.zeros(rewards.shape)
-    for a, agent in enumerate(agents):
-        agent_reward = rewards[a]
-        if not agent.learning:
-            psl_rewards[a] = np.zeros(rewards.shape[0])
-        else:
-            for o, opponent in enumerate(agents):
-                if o != a:
-                    opponent_prev_action = 1 - opponent.prev_actions[a] # 1 if opponent cooperated, 0 if opponent defected
-                    agent_action = 1
-                    psl_rewards[a][o] = min(1 - opponent_prev_action + agent_action, 1)
+#     psl_rewards = np.zeros(rewards.shape)
+#     for a, agent in enumerate(agents):
+#         agent_reward = rewards[a]
+#         if not agent.learning:
+#             psl_rewards[a] = np.zeros(rewards.shape[0])
+#         else:
+#             for o, opponent in enumerate(agents):
+#                 if o != a:
+#                     opponent_prev_action = 1 - opponent.prev_actions[a] # 1 if opponent cooperated, 0 if opponent defected
+#                     agent_action = 1
+#                     psl_rewards[a][o] = min(1 - opponent_prev_action + agent_action, 1)
                     
-def compute_l_reward(env, agemnts, rewards):
+def compute_l_reward(env, agents, rewards):
     # input: rewards is a 2D array of shape (num_agents, num_agents)
     # output: l_rewards is a 2D array of shape (num_agents, num_agents)
     # l_rewards[i][j] is the l reward of agent i against agent j
     l_rewards = np.zeros(rewards.shape)
+    # reward_table = [1,1] # C or D
+    # reward_table = [1,-1] # C and not D
+    # reward_table = [-1,1] # C and not D
+    reward_table = [-1,-1] # not C and not D
     for a, agent in enumerate(agents):
-        agent_reward = rewards[a]
         if not agent.learning:
             l_rewards[a] = np.zeros(rewards.shape[0])
         else:
             for o, opponent in enumerate(agents):
                 if o != a:
-                    # cooperate = 1, defect = 0
-                    opponent_prev_action = 1-env.state_history[-1][o][a]
-                    # agent_action = 1-env.state_history[-1][a][o]
-                    agent_action = 1
-                    # o -> a
-                    if opponent_prev_action:
-                        l_rewards[o][a] = 1
+                    agent_action = env.state_history[-1][a][o]
+                    # print(agent_action)
+                    l_rewards[a][o] = reward_table[agent_action]
+                    
     return l_rewards
 
 
@@ -201,13 +201,15 @@ if __name__ == '__main__':
         
         agents = [
             # RandomAgent(num_states=2, num_actions=2)
-            CAgent(num_states=2, num_actions=2),
-            DAgent(num_states=2, num_actions=2),
+            # CAgent(num_states=2, num_actions=2),
+            # DAgent(num_states=2, num_actions=2),
             # TitForTatAgent(num_states=2, num_actions=2),
             # PDQAgent(num_states=2, num_actions=2),
+            # PDQAgent(num_states=2, num_actions=2),
             # PDSARSAAgent(num_states=2, num_actions=2),
-            # PDDeepSARSAAgent(num_states=2, num_actions=2),
-            PDDQNAgent(num_states=2, num_actions=2),
+            PDDeepSARSAAgent(num_states=2, num_actions=2),
+            PDDeepSARSAAgent(num_states=2, num_actions=2),
+            # PDDQNAgent(num_states=2, num_actions=2),
         ]
 
         num_agents = len(agents)
@@ -230,7 +232,7 @@ if __name__ == '__main__':
         if agents[0].learning:
             print('Run {}: Agent 0 params:'.format(i))
             print(agents[0].get_params())
-            epsilon_histories += agents[0].epsilon_histories
+            # epsilon_histories += agents[0].epsilon_histories1
         
         # determinisitcs.append(determinisitc)
             
@@ -309,6 +311,7 @@ if __name__ == '__main__':
         axs[run].set_xticklabels([agent.name for agent in agents])
         axs[run].set_yticklabels([agent.name for agent in agents])
     fig.tight_layout()
+    plt.title("Mean Action per Agent per Episode")
     plt.show()    
 
     fig, axs = plt.subplots(1, n_runs, figsize=(10, 5))
@@ -327,4 +330,5 @@ if __name__ == '__main__':
         axs[run].set_xticklabels([agent.name for agent in agents])
         axs[run].set_yticklabels([agent.name for agent in agents])
     fig.tight_layout()
-    plt.show()    
+    plt.title("Mean Reward per Agent per Episode")
+    plt.show()

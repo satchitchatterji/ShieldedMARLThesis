@@ -4,7 +4,7 @@ import numpy as np
 
 class spec:
     def __init__(self):
-        self.max_episode_steps = 10
+        self.max_episode_steps = 100
 
 class action_space:
     def __init__(self, n):
@@ -31,9 +31,10 @@ class PrisonersDilemmaMAEnv:
 
         # utilities is a 2D array of shape (4, 2)
         # NFG format: {TL, TR, BL, BR}
-        self.utilities = [[8,8], [0,10], [10,0], [4,4]] # prisoner's dilemma, [cooperate, defect]
+        # self.utilities = [[8,8], [0,10], [10,0], [4,4]] # prisoner's dilemma, [cooperate, defect]
         # self.utilities = [[4,4], [0,3], [3,0], [2,2]] # stag hunt, [stag, hare]
         # self.utilities = [[0,0], [7,2], [2,7], [6,6]] # chicken, [straight, swerve]
+        self.utilities = [[1,1], [-1,-1], [-1,-1], [1,1]] # coordination, [A, B]
         
     def reset(self):
         self.clock = 0

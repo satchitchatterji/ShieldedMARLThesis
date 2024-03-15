@@ -45,7 +45,7 @@ class PDDeepSARSAAgent(object):
         self.learning_rate = 0.01
 
         self.max_history = 1000
-        self.batch_size = 10
+        self.batch_size = 10  
 
         # memory and bookkeeping
         self.history = []
@@ -234,9 +234,9 @@ class PDDeepSARSAAgent(object):
             self.training = False
 
     def begin_episode(self):
-        self.prev_states = [None]*self.num_agents
-        self.prev_actions = [None]*self.num_agents
-        self.rewards = [None]*self.num_agents
+        # self.prev_states = [None]*self.num_agents
+        # self.prev_actions = [None]*self.num_agents
+        # self.rewards = [None]*self.num_agents
         # self.epsilon = self.epsilon_start
         pass
     
