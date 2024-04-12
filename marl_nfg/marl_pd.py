@@ -17,8 +17,10 @@ from pd_q_agent import PDQAgent
 from pd_sarsa_agent import PDSARSAAgent
 from pd_deepsarsa_agent import PDDeepSARSAAgent
 # from pd_dqn_agent import PDDQNAgent
+from pd_dqns_agent import PDDQNShieldedAgent
 
-l_reward_factor = 10
+
+l_reward_factor = 0
 
 # def compute_semantic_reward(env, agents, rewards):
 #     # input: rewards is a 2D array of shape (num_agents, num_agents)
@@ -199,6 +201,24 @@ if __name__ == '__main__':
 
     for i in range(n_runs):
         
+        sh_params = {
+            "config_folder": ".",
+            "num_sensors": 4,
+            "num_actions": 2,
+            "differentiable": True,
+            "shield_program": "dqn_shield.pl",
+            "observation_type": "ground truth",
+        }
+
+        sh_params2 = {
+            "config_folder": ".",
+            "num_sensors": 4,
+            "num_actions": 2,
+            "differentiable": False,
+            "shield_program": "dqn_shield2.pl",
+            "observation_type": "ground truth",
+        }
+
         agents = [
             # RandomAgent(num_states=2, num_actions=2)
             # CAgent(num_states=2, num_actions=2),
@@ -207,9 +227,11 @@ if __name__ == '__main__':
             # PDQAgent(num_states=2, num_actions=2),
             # PDQAgent(num_states=2, num_actions=2),
             # PDSARSAAgent(num_states=2, num_actions=2),
-            PDDeepSARSAAgent(num_states=2, num_actions=2),
-            PDDeepSARSAAgent(num_states=2, num_actions=2),
+            # PDDeepSARSAAgent(num_states=2, num_actions=2),
+            # PDDeepSARSAAgent(num_states=2, num_actions=2),
             # PDDQNAgent(num_states=2, num_actions=2),
+            PDDQNShieldedAgent(num_states=2, num_actions=2, shield_params=sh_params),
+            PDDQNShieldedAgent(num_states=2, num_actions=2, shield_params=sh_params)
         ]
 
         num_agents = len(agents)
@@ -235,13 +257,31 @@ if __name__ == '__main__':
             # epsilon_histories += agents[0].epsilon_histories1
         
         # determinisitcs.append(determinisitc)
-            
+        
         all_state_histories.append(env.state_history)
         all_rewards_histories.append(env.rewards_history)
 
+        # for a, agent in enumerate(agents):
+        #     if agent.name == "DQNShielded":
+        #         agent.save_details(f"dqn_shielded_agent_{a}_run_{i}")
+        #         safety = []
+        #         action_safeties = []
+        #         for iter in agent.debug_info_history :
+        #             safety.append(iter['safety'].squeeze(0).item())
+        #             action_safeties.append(iter['action_safety'].squeeze(0).cpu().numpy())
+                
+        #         print(np.array(action_safeties))
+        #         plt.plot(safety, label='Safety of policy')
+        #         plt.title(f"Run {i} Agent {a} Safety")
+                
+        #         plt.plot(np.array(action_safeties)[:,0], label='Safety of cooperate')
+        #         plt.plot(np.array(action_safeties)[:,1], label='Safety of defect')
+        #         plt.legend()
+                
+        #         plt.show()
+
+
         
-
-
     print(np.array(histories).shape) # (5, 1000, 2, 2) (n_runs, num_episodes, num_agents, num_agents)
 
     # concatenate runs
@@ -257,6 +297,7 @@ if __name__ == '__main__':
     plt.ylabel("Utility attained per opponent")
     plt.legend()
     plt.show()
+    # exit()
     
     # # plot epsilon
     

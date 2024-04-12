@@ -12,8 +12,8 @@ class config:
     discretization = 30
     num_states = None
 
-    num_episodes = 10
-    n_runs = 5
+    num_episodes = 30
+    n_runs = 2
 
     def update_observation_space(observation_space):
         config.observation_space = observation_space
