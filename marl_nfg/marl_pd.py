@@ -231,8 +231,9 @@ if __name__ == '__main__':
             # PDDeepSARSAAgent(num_states=2, num_actions=2),
             # PDDQNAgent(num_states=2, num_actions=2),
             PDDQNShieldedAgent(num_states=2, num_actions=2, shield_params=sh_params),
-            PDDQNShieldedAgent(num_states=2, num_actions=2, shield_params=sh_params)
+            # PDDQNShieldedAgent(num_states=2, num_actions=2, shield_params=sh_params)
         ]
+        agents.append(PDDQNShieldedAgent(num_states=2, num_actions=2, shield=agents[0].shield))
 
         num_agents = len(agents)
         for agent in agents:

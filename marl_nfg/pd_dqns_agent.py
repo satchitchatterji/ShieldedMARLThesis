@@ -17,7 +17,7 @@ ACTION_DIST = 5
 class PDDQNShieldedAgent(object):
     """ Agent that uses the SARSA update rule to learn Q(s,a) estimates,
         using an MLP as a function approximator. """
-    def __init__(self, num_states, num_actions, func_approx=None, shield_params=None, get_sensor_value_ground_truth=None):
+    def __init__(self, num_states, num_actions, func_approx=None, shield_params=None, shield=None, get_sensor_value_ground_truth=None):
 
         self.observation_type = 'discrete'
         self.action_type = 'discrete'
@@ -72,9 +72,14 @@ class PDDQNShieldedAgent(object):
             self.get_sensor_value_ground_truth = lambda x: x
             print("No sensor value function provided. Asumming ground truth.")
 
+
+        # agents can share a shield if a shield is passed in
+        assert shield_params is None or shield is None, "Cannot pass in both shield_params and shield"
         self.shield = None
         if shield_params is not None:
             self.shield = Shield(get_sensor_value_ground_truth=self.get_sensor_value_ground_truth, **shield_params)
+        elif shield is not None:
+            self.shield = shield
 
         self.alpha = 0.3
 
