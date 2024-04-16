@@ -11,8 +11,19 @@ env = waterworld_v4.parallel_env(render_mode=None, speed_features=False, pursuer
 env.reset()
 
 agents = {}
-for agent in env.agents:
-    agents[agent] = DQNShielded(env.observation_spaces[agent].shape[0], 5)
+
+training_style = "PS-DQL"
+if training_style == "PS-DQL":
+    # PS-DQL
+    agents[env.agents[0]] = DQNShielded(env.observation_spaces[env.agents[0]].shape[0], 5)
+    for a, agent in enumerate(env.agents):
+        if a != 0:
+            agents[agent] = DQNShielded(env.observation_spaces[agent].shape[0], 5, func_approx=agents[env.agents[0]].func_approx)
+
+elif training_style == "IDQL":
+    # IDQL
+    for agent in env.agents:
+        agents[agent] = DQNShielded(env.observation_spaces[agent].shape[0], 5)
 
 def action_wrapper(action):
     move = pursuer_max_accel
@@ -60,7 +71,7 @@ for ep in range(5):
     ep_rewards.append({a:np.sum(ep_rewards_this[a]) for a in ep_rewards_this.keys()})
     ep_rewards[-1]["total"] = np.sum([np.sum(ep_rewards_this[a]) for a in ep_rewards_this.keys()])
     print(ep_rewards[-1])
-    
+
 env.close()
 
 for agent in reward_hist:
@@ -68,7 +79,10 @@ for agent in reward_hist:
 plt.legend()
 plt.show()
 
-plt.plot([r["total"] for r in ep_rewards])
+for agent in ep_rewards[0]:
+    plt.plot([r[agent] for r in ep_rewards], label=agent)
+plt.plot([r["total"] for r in ep_rewards], label="total")
+plt.legend()
 plt.show()
 
 
