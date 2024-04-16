@@ -53,8 +53,8 @@ class PDDQNShieldedAgent(object):
         self.learning_rate = 0.01
 
         self.max_history = 1000
-        self.batch_size = 10
-        self.epochs = 1
+        self.batch_size = 64
+        self.epochs = 5
 
         # memory and bookkeeping
         self.history = []
@@ -196,7 +196,7 @@ class PDDQNShieldedAgent(object):
             # compute the shielded policy
             # print(base_actions.shape, sensor_values.shape)
             actions = self.shield.get_shielded_policy(base_actions.unsqueeze(0), sensor_values.unsqueeze(0))
-            shielded_policy = Categorical(probs=actions)
+            # shielded_policy = Categorical(probs=actions)
             safety = self.shield.get_policy_safety(sensor_values.unsqueeze(0), base_actions.unsqueeze(0))
             # print(safety)
             # get the most probable action of the shielded policy if we want to use a deterministic policy,
@@ -248,9 +248,12 @@ class PDDQNShieldedAgent(object):
         # softmax q vals
         Q_values_norm = torch.exp(Q_values) / torch.sum(torch.exp(Q_values))
         shielded_policy = self.get_shielded_action(state, Q_values_norm).squeeze(0)
+
         # self.debug_info =
         action = self.e_greedy(shielded_policy)
+        # print("State: ", state)
         # print("Q_values: ", Q_values)
+        # print("Q_values_norm: ", Q_values_norm)
         # print("Shielded policy: ", shielded_policy)
 
         if self.training:
@@ -339,7 +342,7 @@ class PDDQNShieldedAgent(object):
                 target[cur_action] = cur_reward + self.gamma*(torch.max(next_Q_vals))
 
             y_train.append(target)
-            y_pred.append(cur_Q_vals)
+            # y_pred.append(cur_Q_vals)
             # TODO: need to backpropagate through action_dist or safety_dist?
             safety_augmentations.append(self.get_safety_loss(cur_state, action_dist))
 
@@ -379,9 +382,10 @@ class PDDQNShieldedAgent(object):
             with open(filename + "_debug_info.txt", 'w') as f:
                 f.write(str(self.debug_info_history))
 
-    def load_model(self, filename, exploit=False):
+    def load_model(self, filename=None, exploit=False):
         """ Load model for training or optional exploitative deployment """
-        
+        if filename is None:
+            self.saved_model_name = filename
         self.func_approx = self.init_mlp(self.n_inputs, self.num_actions)
         self.func_approx.load_state_dict(torch.load(self.saved_model_name))
         self.func_approx.to(self.device)

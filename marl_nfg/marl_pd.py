@@ -73,14 +73,14 @@ def compute_l_reward(env, agents, rewards):
     return l_rewards
 
 
-def run_episode(env, agents, max_steps):
+def run_episode(env, agents, max_steps, ep_num=None):
     observation = env.reset()[0]
     total_agent_rewards = np.zeros((len(agents), len(agents)))
 
     for agent in agents:
         agent.begin_episode()
     
-    for _ in trange(max_steps):
+    for _ in trange(max_steps, desc=f'Episode {ep_num} / {config.num_episodes}'):
         # env.render()
         actions = []
         for i, agent in enumerate(agents):
@@ -127,7 +127,7 @@ def run(env, agents, run_fn, num_episodes):
     bestreward = [None]*num_episodes
     history = []
     for e in range(num_episodes):
-        rewards = run_fn(env, agents, env.spec.max_episode_steps)
+        rewards = run_fn(env, agents, env.spec.max_episode_steps, ep_num=e)
         history.append(rewards)
         params = [agent.get_params() for agent in agents]
         # find the best agent
@@ -213,9 +213,9 @@ if __name__ == '__main__':
 
         sh_params2 = {
             "config_folder": ".",
-            "num_sensors": 4,
+            "num_sensors": 6,
             "num_actions": 2,
-            "differentiable": False,
+            "differentiable": True,
             "shield_program": "dqn_shield2.pl",
             "observation_type": "ground truth",
         }
@@ -231,10 +231,11 @@ if __name__ == '__main__':
             # PDDeepSARSAAgent(num_states=2, num_actions=2),
             # PDDeepSARSAAgent(num_states=2, num_actions=2),
             # PDDQNAgent(num_states=2, num_actions=2),
-            PDDQNShieldedAgent(num_states=2, num_actions=2, shield_params=sh_params),
-            # PDDQNShieldedAgent(num_states=2, num_actions=2, shield_params=sh_params)
+            PDDQNShieldedAgent(num_states=2, num_actions=2, shield_params=sh_params2),
+            PDDQNShieldedAgent(num_states=2, num_actions=2, shield_params=sh_params2),
+            PDDQNShieldedAgent(num_states=2, num_actions=2, shield_params=sh_params2)
         ]
-        agents.append(PDDQNShieldedAgent(num_states=2, num_actions=2, shield=agents[0].shield))
+        # agents.append(PDDQNShieldedAgent(num_states=2, num_actions=2, shield=agents[0].shield))
 
         num_agents = len(agents)
         for agent in agents:
@@ -267,8 +268,11 @@ if __name__ == '__main__':
             if agent.name == "DQNShielded":
                 safety = []
                 base_loss = []
+                for iter in agent.debug_info_history:
+                    safety.append(iter['safety'].squeeze(0).item())
+
                 for iter in agent.loss_info:
-                    safety.append(iter['safety_loss'].squeeze(0).item())
+                    # safety.append(iter['safety_loss'].squeeze(0).item())
                     base_loss.append(iter['base_loss'].squeeze(0).item())
 
                 if agent.name not in all_safe_loss_histories:
@@ -283,12 +287,12 @@ if __name__ == '__main__':
 
     for agent, loss in all_safe_loss_histories.items():
         ax1.plot(loss, label=agent+" safety")
-    ax1.set_ylim(0, 1)
+    # ax1.set_ylim(0, 1)
     ax2 = ax1.twinx()
     for agent, loss in all_base_loss_histories.items():
         ax2.plot(loss, linestyle="dashed", label=agent+" base")
 
-    plt.title("Training Losses")
+    plt.title("Training stuff")
     lines, labels = ax1.get_legend_handles_labels()
     lines2, labels2 = ax2.get_legend_handles_labels()
     ax2.legend(lines + lines2, labels + labels2)
@@ -296,10 +300,8 @@ if __name__ == '__main__':
     ax1.set_ylabel("Safety loss")
     ax2.set_ylabel("Base loss")
     # ax1.vlines(np.arange(n_runs+1)*config.num_episodes*env.spec.max_episode_steps, 0, 1, colors='k', linestyles='dashed', label="Reset point")
-    ax1.legend()
-    ax2.legend()
     plt.show()
-    exit()
+    # exit()
 
 
     print(np.array(histories).shape) # (5, 1000, 2, 2) (n_runs, num_episodes, num_agents, num_agents)
