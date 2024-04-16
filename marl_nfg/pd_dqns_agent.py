@@ -81,7 +81,7 @@ class PDDQNShieldedAgent(object):
         elif shield is not None:
             self.shield = shield
 
-        self.alpha = 0.3
+        self.alpha = 1
 
         self.debug_info_history = []
         self.save_debug_info = True
@@ -256,7 +256,7 @@ class PDDQNShieldedAgent(object):
             self.epsilon = max(self.epsilon, self.epsilon_min)
 
             # states, q_vals, action, reward, terminal
-            self.history.append([state, Q_values, action, None, None, Q_values_norm])
+            self.history.append([state, Q_values, action, None, None, shielded_policy])
 
             # forget the oldest memories to make room for new ones
             if len(self.history) > self.max_history:
@@ -323,7 +323,7 @@ class PDDQNShieldedAgent(object):
 
             X_train.append(cur_state)
 
-            # define target using SARSA update rule
+            # define target using DQN update rule
             target = cur_Q_vals
             if terminal:
                 target[cur_action] = cur_reward
@@ -335,6 +335,7 @@ class PDDQNShieldedAgent(object):
 
             y_train.append(target)
             
+            # TODO: need to backpropagate through action_dist or safety_dist?
             safety_augmentations.append(self.get_safety_loss(cur_state, action_dist))
 
         # convert to torch tensors
