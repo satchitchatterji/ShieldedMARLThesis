@@ -1,10 +1,9 @@
 % actions
 action(0)::action(up);
-action(1)::action(neutralvertical);
 action(2)::action(down);
 action(3)::action(left);
-action(4)::action(neutralhorizontal);
 action(5)::action(right).
+action(4)::action(none);
 
 
 % states (discretized)

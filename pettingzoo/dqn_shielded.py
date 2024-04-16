@@ -15,7 +15,7 @@ TERMINAL = 4
 ACTION_DIST = 5
 # SAFETY_DIST = 6
 
-class PDDQNShieldedAgent(object):
+class DQNShielded(object):
     """ Agent that uses the SARSA update rule to learn Q(s,a) estimates,
         using an MLP as a function approximator. """
     def __init__(self, num_states, num_actions, func_approx=None, shield_params=None, shield=None, get_sensor_value_ground_truth=None):
@@ -23,12 +23,12 @@ class PDDQNShieldedAgent(object):
         self.observation_type = 'discrete'
         self.action_type = 'discrete'
         self.learning = True
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-        # input: num_states + num_agents
+        # input: num_states
         # output: Q(s,a)
         self.num_states = num_states
         self.num_actions = num_actions
-        self.num_agents = None
 
         # set up agent
         self.n_inputs = None
@@ -40,39 +40,39 @@ class PDDQNShieldedAgent(object):
         self.optimizer = None
         self.base_loss_fn = None
         if func_approx is not None:
-            self.func_approx = func_approx
-        
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            self.func_approx = func_approx.to(self.device)
+
 
         # Hyperparameters
         self.epsilon = 1.0
-        self.epsilon_decay = 0.99
+        self.epsilon_decay = 0.999
         self.epsilon_min = 0.1
 
-        self.gamma = 0.2
+        self.gamma = 0.99
         self.learning_rate = 0.01
 
         self.max_history = 1000
-        self.batch_size = 64
-        self.epochs = 5
+        self.batch_size = 128
+        self.epochs = 10
 
         # memory and bookkeeping
         self.history = []
+        self._temp_history = []
         self.saved_model_name = ""
         self.name = "DQNShielded"
 
         # initialize memory for now 
         # TODO: merge functionality with self.history later
-        self.prev_states = None
-        self.prev_actions = None
-        self.rewards = None
+        self.prev_state = None
+        self.prev_action = None
+        self.reward = None
 
         # shield
         if get_sensor_value_ground_truth is not None:
             self.get_sensor_value_ground_truth = get_sensor_value_ground_truth
         else:
             self.get_sensor_value_ground_truth = lambda x: x
-            print("No sensor value function provided. Asumming ground truth.")
+            print("No sensor value function provided. Assumming ground truth.")
 
 
         # agents can share a shield if a shield is passed in
@@ -82,6 +82,8 @@ class PDDQNShieldedAgent(object):
             self.shield = Shield(get_sensor_value_ground_truth=self.get_sensor_value_ground_truth, **shield_params)
         elif shield is not None:
             self.shield = shield
+        elif shield_params is None and shield is None:
+            self.shield = None
 
         self.alpha = 1
 
@@ -89,33 +91,37 @@ class PDDQNShieldedAgent(object):
         self.loss_info = []
         self.save_debug_info = True
 
-    def update_n_agents(self, n_agents):
-        """ Update the number of agents in the environment """
-        self.num_agents = n_agents
+        self._setup()
+
+    def _setup(self):
+        """ Set up the agent for training or evaluation """
+
         # bookkeeping
-        self.prev_states = [None]*self.num_agents
-        self.prev_actions = [None]*self.num_agents
-        self.rewards = [None]*self.num_agents
+        self.prev_state = None
+        self.prev_action = None
+        self.reward = None
         # set up function approximator
-        self.n_inputs = self.num_states + self.num_agents
+        self.n_inputs = self.num_states
         self.n_outputs = self.num_actions
         if self.func_approx is None:
             self.func_approx = self.init_mlp(self.n_inputs, self.num_actions)
+        # set up training stuff
+        self.optimizer = torch.optim.Adam(self.func_approx.parameters(), lr=self.learning_rate)
+        self.base_loss_fn = torch.nn.MSELoss().to(self.device)
 
     def init_mlp(self, input_len, output_len):
         """ Initialize an MLP as a function approximator """
 
         model = torch.nn.Sequential(
-            torch.nn.Linear(input_len, 11),
+            torch.nn.Linear(input_len, 32),
             torch.nn.ReLU(),
-            torch.nn.Linear(11, output_len)
+            torch.nn.Linear(32, 32),
+            torch.nn.ReLU(),
+            torch.nn.Linear(32, output_len)
         )
 
         model.to(self.device)
-        # Optimizer
-        self.optimizer = torch.optim.Adam(model.parameters(), lr=self.learning_rate)
-        self.base_loss_fn = torch.nn.MSELoss().to(self.device)
-
+        
         return model
 
     def calc_action_values(self, inputs):
@@ -142,36 +148,12 @@ class PDDQNShieldedAgent(object):
 
     def act(self, states):
         """ Choose an action for each agent, given the current state """
-        if self.num_agents is None:
-            raise Exception("Number of agents not set. Call update_n_agents() first.")
-            
-        actions = []
-        for agent in range(self.num_agents):
-            actions.append(self.act_single(states, agent))
 
-        self.prev_actions = actions
-        self.prev_states = states
+        action = self.get_decision(states)
+
+        self.prev_action = action
+        self.prev_state = states
         
-        return actions
-
-    def act_single(self, states, agent):
-        """ Choose an action for a single agent, given the current state """
-        # shape of states: (num_agents, num_states)
-        # expected input to MLP: (num_agents + num_states, 1)
-        # expected output of MLP: (num_actions, 1)
-        if states[agent] is None:
-            state = 0
-        else:
-            state = states[agent]
-
-        state_one_hot = torch.zeros(self.num_states)
-        state_one_hot[state] = 1    
-        agent_one_hot = torch.zeros(self.num_agents)
-        agent_one_hot[agent] = 1
-
-        state = torch.concatenate((state_one_hot, agent_one_hot))
-        action = self.get_decision(state)
-
         return action
 
     def get_shielded_action(self, x, base_actions):
@@ -261,27 +243,28 @@ class PDDQNShieldedAgent(object):
             self.epsilon *= self.epsilon_decay
             self.epsilon = max(self.epsilon, self.epsilon_min)
 
-            # states, q_vals, action, reward, terminal
-            self.history.append([state, Q_values, action, None, None, shielded_policy])
-
-            # forget the oldest memories to make room for new ones
-            if len(self.history) > self.max_history:
-                self.history.pop(0)
+            # states, q_vals, action, reward, terminal, action_dist
+            self._temp_history = [state, Q_values, action, None, None, shielded_policy]
 
         return self.controls[action]
 
-    def update_reward(self, rewards, terminal=False):
+    def update_reward(self, reward, terminal=False):
         """ Record the current reward and whether or not the state is terminal. """
         if self.training:
-            # update it for each agent in order
-            for agent_idx, reward in enumerate(rewards):
-                placing_index = len(self.history) - self.num_agents + agent_idx
-                self.history[placing_index][REWARD] = reward
-                self.history[placing_index][TERMINAL] = terminal
+            self.history.append([None]*6)
+            self.history[-1][STATE] = self._temp_history[STATE]
+            self.history[-1][Q_VALS] = self._temp_history[Q_VALS]
+            self.history[-1][ACTION] = self._temp_history[ACTION] 
+            self.history[-1][REWARD] = reward
+            self.history[-1][TERMINAL] = terminal
+            self.history[-1][ACTION_DIST] = self._temp_history[ACTION_DIST]
+            # forget the oldest memories to make room for new ones
+            if len(self.history) > self.max_history:
+                self.history.pop(0)        
         
-        self.rewards = rewards
+        self.reward = reward
 
-        if self.prev_actions is not None and not self.eval_mode:
+        if not self.eval_mode and self.training and self.prev_state is not None:
             for _ in range(self.epochs):
                 self.train_model()
     
@@ -340,7 +323,7 @@ class PDDQNShieldedAgent(object):
                 
                 self.update_rule = "cur_reward + self.gamma*(torch.max(next_Q_vals))"
                 target[cur_action] = cur_reward + self.gamma*(torch.max(next_Q_vals))
-
+ 
             y_train.append(target)
             # y_pred.append(cur_Q_vals)
             # TODO: need to backpropagate through action_dist or safety_dist?
@@ -395,9 +378,9 @@ class PDDQNShieldedAgent(object):
             self.training = False
 
     def begin_episode(self):
-        # self.prev_states = [None]*self.num_agents
-        # self.prev_actions = [None]*self.num_agents
-        # self.rewards = [None]*self.num_agents
+        self.prev_states = None
+        # self.prev_actions = None
+        # self.rewards = None
         # self.epsilon = self.epsilon_start
         pass
     
