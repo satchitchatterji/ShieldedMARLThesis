@@ -13,6 +13,7 @@ ACTION = 2
 REWARD = 3
 TERMINAL = 4
 ACTION_DIST = 5
+# SAFETY_DIST = 6
 
 class PDDQNShieldedAgent(object):
     """ Agent that uses the SARSA update rule to learn Q(s,a) estimates,
@@ -45,7 +46,7 @@ class PDDQNShieldedAgent(object):
 
         # Hyperparameters
         self.epsilon = 1.0
-        self.epsilon_decay = 0.9985
+        self.epsilon_decay = 0.99
         self.epsilon_min = 0.1
 
         self.gamma = 0.2
@@ -53,6 +54,7 @@ class PDDQNShieldedAgent(object):
 
         self.max_history = 1000
         self.batch_size = 10
+        self.epochs = 1
 
         # memory and bookkeeping
         self.history = []
@@ -84,6 +86,7 @@ class PDDQNShieldedAgent(object):
         self.alpha = 1
 
         self.debug_info_history = []
+        self.loss_info = []
         self.save_debug_info = True
 
     def update_n_agents(self, n_agents):
@@ -171,7 +174,7 @@ class PDDQNShieldedAgent(object):
 
         return action
 
-    def get_shielded_action(self, x, base_actions, deterministic=False):
+    def get_shielded_action(self, x, base_actions):
         if self.shield is None:
             sensor_values = self.get_sensor_value_ground_truth(x)
         else:
@@ -244,7 +247,7 @@ class PDDQNShieldedAgent(object):
 
         # softmax q vals
         Q_values_norm = torch.exp(Q_values) / torch.sum(torch.exp(Q_values))
-        shielded_policy = self.get_shielded_action(state, Q_values_norm, deterministic=False)
+        shielded_policy = self.get_shielded_action(state, Q_values_norm).squeeze(0)
         # self.debug_info =
         action = self.e_greedy(shielded_policy)
         # print("Q_values: ", Q_values)
@@ -276,7 +279,8 @@ class PDDQNShieldedAgent(object):
         self.rewards = rewards
 
         if self.prev_actions is not None and not self.eval_mode:
-            self.train_model()
+            for _ in range(self.epochs):
+                self.train_model()
     
     def get_safety_loss(self, sensor_values, base_actions):
         ####### Safety loss ###########################################
@@ -311,6 +315,7 @@ class PDDQNShieldedAgent(object):
         # generate training samples to be used with usual backprop learning methods
 
         X_train, y_train = [], []
+        y_pred = []
         safety_augmentations = []
         for batch_idx in current_batch:
             
@@ -334,7 +339,7 @@ class PDDQNShieldedAgent(object):
                 target[cur_action] = cur_reward + self.gamma*(torch.max(next_Q_vals))
 
             y_train.append(target)
-            
+            y_pred.append(cur_Q_vals)
             # TODO: need to backpropagate through action_dist or safety_dist?
             safety_augmentations.append(self.get_safety_loss(cur_state, action_dist))
 
@@ -344,12 +349,20 @@ class PDDQNShieldedAgent(object):
         safety_loss = torch.mean(torch.stack(safety_augmentations, dim=0)).to(self.device)
         
         # forward pass
+        # TODO: Create target network for DQN
         y_pred = self.func_approx(X_train)
 
-        loss = self.base_loss_fn(y_pred, y_train) + safety_loss
+        # calculate loss
+        base_loss = self.base_loss_fn(y_pred, y_train)
+        loss = base_loss + safety_loss
+
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
+
+        losses = {"base_loss": base_loss, "safety_loss": safety_loss}
+        # print(losses)
+        self.loss_info.append(losses)
 
     def save_model(self, filename):
         """ Save a copy of the current model to file """
@@ -378,9 +391,9 @@ class PDDQNShieldedAgent(object):
             self.training = False
 
     def begin_episode(self):
-        self.prev_states = [None]*self.num_agents
-        self.prev_actions = [None]*self.num_agents
-        self.rewards = [None]*self.num_agents
+        # self.prev_states = [None]*self.num_agents
+        # self.prev_actions = [None]*self.num_agents
+        # self.rewards = [None]*self.num_agents
         # self.epsilon = self.epsilon_start
         pass
     
