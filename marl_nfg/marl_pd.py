@@ -198,7 +198,8 @@ if __name__ == '__main__':
     n_runs = config.n_runs
     all_state_histories = []
     all_rewards_histories = []
-
+    all_safe_loss_histories = {}
+    all_base_loss_histories = {}
     for i in range(n_runs):
         
         sh_params = {
@@ -262,27 +263,45 @@ if __name__ == '__main__':
         all_state_histories.append(env.state_history)
         all_rewards_histories.append(env.rewards_history)
 
-        # for a, agent in enumerate(agents):
-        #     if agent.name == "DQNShielded":
-        #         agent.save_details(f"dqn_shielded_agent_{a}_run_{i}")
-        #         safety = []
-        #         action_safeties = []
-        #         for iter in agent.debug_info_history :
-        #             safety.append(iter['safety'].squeeze(0).item())
-        #             action_safeties.append(iter['action_safety'].squeeze(0).cpu().numpy())
-                
-        #         print(np.array(action_safeties))
-        #         plt.plot(safety, label='Safety of policy')
-        #         plt.title(f"Run {i} Agent {a} Safety")
-                
-        #         plt.plot(np.array(action_safeties)[:,0], label='Safety of cooperate')
-        #         plt.plot(np.array(action_safeties)[:,1], label='Safety of defect')
-        #         plt.legend()
-                
-        #         plt.show()
+        for a, agent in enumerate(agents):
+            if agent.name == "DQNShielded":
+                safety = []
+                base_loss = []
+                for iter in agent.loss_info:
+                    safety.append(iter['safety_loss'].squeeze(0).item())
+                    base_loss.append(iter['base_loss'].squeeze(0).item())
+
+                if agent.name not in all_safe_loss_histories:
+                    all_safe_loss_histories[agent.name+str(a)] = list()
+                    all_base_loss_histories[agent.name+str(a)] = list()
+
+                all_safe_loss_histories[agent.name+str(a)] += safety
+                all_base_loss_histories[agent.name+str(a)] += base_loss
+
+    # plot safety
+    fig, ax1 = plt.subplots()
+
+    for agent, loss in all_safe_loss_histories.items():
+        ax1.plot(loss, label=agent+" safety")
+    ax1.set_ylim(0, 1)
+    ax2 = ax1.twinx()
+    for agent, loss in all_base_loss_histories.items():
+        ax2.plot(loss, linestyle="dashed", label=agent+" base")
+
+    plt.title("Training Losses")
+    lines, labels = ax1.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    ax2.legend(lines + lines2, labels + labels2)
+    ax1.set_xlabel("Training steps")
+    ax1.set_ylabel("Safety loss")
+    ax2.set_ylabel("Base loss")
+    # ax1.vlines(np.arange(n_runs+1)*config.num_episodes*env.spec.max_episode_steps, 0, 1, colors='k', linestyles='dashed', label="Reset point")
+    ax1.legend()
+    ax2.legend()
+    plt.show()
+    exit()
 
 
-        
     print(np.array(histories).shape) # (5, 1000, 2, 2) (n_runs, num_episodes, num_agents, num_agents)
 
     # concatenate runs
