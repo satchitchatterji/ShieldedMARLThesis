@@ -10,20 +10,59 @@ max_cycles=500
 env = waterworld_v4.parallel_env(render_mode=None, speed_features=False, pursuer_max_accel=pursuer_max_accel, max_cycles=max_cycles)
 env.reset()
 
+sh_params = {
+    "config_folder": ".",
+    "num_sensors": 4,
+    "num_actions": 2,
+    "differentiable": True,
+    "shield_program": "dqn_shield.pl",
+    "observation_type": "ground truth",
+}
+
 agents = {}
 
-training_style = "PS-DQL"
-if training_style == "PS-DQL":
-    # PS-DQL
+training_style = "PSDQL"
+
+# - IDQL: Independent DQL
+# - SIIDQL: Shield-Independent IDQL
+# - SSIDQL: Shield-Sharing IDQL
+
+# - PSDQL: Parameter-Sharing DQL
+# - SIPSDQL: Shield-Independent PS-DQL
+# - SSPSDQL: Shield-Sharing PS-DQL
+
+if training_style == "IDQL":
+    for agent in env.agents:
+        agents[agent] = DQNShielded(env.observation_spaces[agent].shape[0], 5)
+
+elif training_style == "SIIDQL":
+    for agent in env.agents:
+        agents[agent] = DQNShielded(env.observation_spaces[agent].shape[0], 5, shield_params=sh_params)
+
+elif training_style == "SSIDQL":
+    agents[env.agents[0]] = DQNShielded(env.observation_spaces[env.agents[0]].shape[0], 5, shield_params=sh_params)
+    for a, agent in enumerate(env.agents):
+        if a != 0:
+            agents[agent] = DQNShielded(env.observation_spaces[agent].shape[0], 5, shield=agents[env.agents[0]].shield)
+
+elif training_style == "PSDQL":
     agents[env.agents[0]] = DQNShielded(env.observation_spaces[env.agents[0]].shape[0], 5)
     for a, agent in enumerate(env.agents):
         if a != 0:
             agents[agent] = DQNShielded(env.observation_spaces[agent].shape[0], 5, func_approx=agents[env.agents[0]].func_approx)
 
-elif training_style == "IDQL":
-    # IDQL
-    for agent in env.agents:
-        agents[agent] = DQNShielded(env.observation_spaces[agent].shape[0], 5)
+elif training_style == "SIPSDQL":
+    agents[env.agents[0]] = DQNShielded(env.observation_spaces[env.agents[0]].shape[0], 5, shield_params=sh_params)
+    for a, agent in enumerate(env.agents):
+        if a != 0:
+            agents[agent] = DQNShielded(env.observation_spaces[agent].shape[0], 5, func_approx=agents[env.agents[0]].func_approx, shield_params=sh_params)
+
+elif training_style == "SSPSDQL":
+    agents[env.agents[0]] = DQNShielded(env.observation_spaces[env.agents[0]].shape[0], 5, shield_params=sh_params)
+    for a, agent in enumerate(env.agents):
+        if a != 0:
+            agents[agent] = DQNShielded(env.observation_spaces[agent].shape[0], 5, func_approx=agents[env.agents[0]].func_approx, shield=agents[env.agents[0]].shield)
+
 
 def action_wrapper(action):
     move = pursuer_max_accel
