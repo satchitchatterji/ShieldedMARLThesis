@@ -167,28 +167,15 @@ class DQNShielded(object):
         actions = None
         safety = -1
         if self.shield is None:
-            # actions = distribution.get_actions(deterministic=deterministic)
-            # log_prob = distribution.log_prob(actions)
             self.debug_info["shielded_policy"] = base_actions
-
-            # return (actions, values, log_prob)
             actions = base_actions
 
         elif self.shield.differentiable:  # PLPG
             # compute the shielded policy
-            # print(base_actions.shape, sensor_values.shape)
             actions = self.shield.get_shielded_policy(base_actions.unsqueeze(0), sensor_values.unsqueeze(0))
             # shielded_policy = Categorical(probs=actions)
             safety = self.shield.get_policy_safety(sensor_values.unsqueeze(0), base_actions.unsqueeze(0))
-            # print(safety)
-            # get the most probable action of the shielded policy if we want to use a deterministic policy,
-            # otherwuse, sample an action
-            # if deterministic:
-            #     actions = torch.argmax(shielded_policy.probs, dim=1)
-            # else:
-            #     actions = shielded_policy.sample()
 
-            # log_prob = shielded_policy.log_prob(actions)
             self.debug_info["shielded_policy"] = actions
             self.debug_info["safety"] = safety
             self.debug_info["action_safety"] = self.shield.get_action_safeties(sensor_values.unsqueeze(0))
