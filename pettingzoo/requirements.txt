@@ -4,4 +4,4 @@ torch
 pettingzoo[sisl]
 tqdm
 wandb
--e git+https://github.com/satchitchatterji/ThesisPLS.git@main#egg=pls
+# -e git+https://github.com/satchitchatterji/ThesisPLS.git@main#egg=pls
