@@ -25,7 +25,7 @@ sh_params = {
 
 agents = {}
 
-training_style = "SSPSDQL"
+training_style = "IDQL"
 
 # - IDQL: Independent DQL
 # - SIIDQL: Shield-Independent IDQL
@@ -95,7 +95,7 @@ for ep in range(5):
         observations, rewards, terminations, truncations, infos = env.step(actions)
         
         wandb.log({f"reward_{agent}": rewards[agent] for agent in env.agents})
-        wandb.log({f"safety_{agent}": agents[agent].debug_info["safety"]  for agent in env.agents})
+        wandb.log({f"safety_{agent}": agents[agent].debug_info["safety"]  for agent in env.agents if "safety" in agents[agent].debug_info})
 
         for agent in env.agents:
             agents[agent].update_reward(rewards[agent], terminations[agent] or truncations[agent])
