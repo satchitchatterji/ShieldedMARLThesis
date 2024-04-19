@@ -144,7 +144,7 @@ class DQNShielded(object):
         if random.random() < self.epsilon:
             return np.random.choice(range(n_actions))
         else:
-            return np.argmax(Q_values.detach().numpy())
+            return np.argmax(Q_values.detach().cpu().numpy())
 
     def act(self, states):
         """ Choose an action for each agent, given the current state """

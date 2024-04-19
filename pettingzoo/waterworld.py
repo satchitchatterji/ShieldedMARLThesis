@@ -5,6 +5,9 @@ from dqn_shielded import DQNShielded
 import matplotlib.pyplot as plt
 from tqdm import trange
 
+import os
+system = os.name
+
 import wandb
 import time
 cur_time = time.time()
@@ -13,6 +16,7 @@ pursuer_max_accel=0.01
 max_cycles=500
 env = waterworld_v4.parallel_env(render_mode=None, speed_features=False, pursuer_max_accel=pursuer_max_accel, max_cycles=max_cycles)
 env.reset()
+
 
 sh_params = {
     "config_folder": ".",
@@ -25,7 +29,7 @@ sh_params = {
 
 agents = {}
 
-training_style = "IDQL"
+training_style = "SSPSDQL"
 
 # - IDQL: Independent DQL
 # - SIIDQL: Shield-Independent IDQL
@@ -68,7 +72,7 @@ elif training_style == "SSPSDQL":
             agents[agent] = DQNShielded(env.observation_spaces[agent].shape[0], 5, func_approx=agents[env.agents[0]].func_approx, shield=agents[env.agents[0]].shield)
 
 def action_wrapper(action):
-    move = pursuer_max_accel
+    move = pursuer_max_accel*2/3
     actions = np.array([
                [0, move],
                [0, -move],
@@ -80,9 +84,9 @@ def action_wrapper(action):
 
 reward_hist = {}
 ep_rewards = []
-for ep in range(5):
+for ep in range(2):
     print(f"Episode {ep}")
-    wandb.init(project="waterworld", name=f"{training_style}_ep_{ep}_{cur_time}")
+    wandb.init(project=f"{system}_waterworld", name=f"{training_style}_ep_{ep}_{cur_time}")
     ep_rewards_this = {}
     observations, infos = env.reset()
 
