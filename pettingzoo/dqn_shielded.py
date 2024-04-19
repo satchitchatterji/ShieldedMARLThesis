@@ -51,8 +51,8 @@ class DQNShielded(object):
         self.gamma = 0.99
         self.learning_rate = 0.01
 
-        self.max_history = 10000
-        self.batch_size = 512
+        self.max_history = 100
+        self.batch_size = 4
         self.epochs = 1
 
         # memory and bookkeeping
@@ -262,13 +262,13 @@ class DQNShielded(object):
             for _ in range(self.epochs):
                 self.train_model()
     
-    def get_safety_loss(self, sensor_values, base_actions):
+    def get_safety_loss(self, sensor_values_batch, base_actions_batch):
         ####### Safety loss ###########################################
         if self.shield is None:
             # no shield
-            safety_loss = torch.Tensor([0])
+            safety_loss = torch.Tensor([0]*len(sensor_values_batch))
         else:
-            policy_safeties = self.shield.get_policy_safety(sensor_values.unsqueeze(0), base_actions.unsqueeze(0))
+            policy_safeties = self.shield.get_policy_safety(sensor_values_batch, base_actions_batch)
             policy_safeties = policy_safeties.flatten()
             safety_loss = -torch.log(policy_safeties)
             safety_loss = torch.mean(safety_loss)
@@ -290,44 +290,29 @@ class DQNShielded(object):
         self.func_approx.train()
 
         # uniformly sample from memory
-        current_batch = random.sample(range(len(self.history)-1), self.batch_size)
-        
-        # generate training samples to be used with usual backprop learning methods
+        current_batch = torch.Tensor(random.sample(range(len(self.history)-1), self.batch_size)).to(self.device)
+        next_batch = current_batch + 1
 
-        X_train, y_train = [], []
-        y_pred = []
-        safety_augmentations = []
-        for batch_idx in current_batch:
-            
-            cur_state = self.history[batch_idx][STATE]
-            cur_action = self.history[batch_idx][ACTION]
-            cur_Q_vals = self.history[batch_idx][Q_VALS]
-            cur_reward = self.history[batch_idx][REWARD]
-            terminal = self.history[batch_idx][TERMINAL]
-            action_dist = self.history[batch_idx][ACTION_DIST]
+        cur_states = torch.stack([self.history[int(i)][STATE] for i in current_batch]).to(self.device).float()
+        cur_q_vals = torch.stack([self.history[int(i)][Q_VALS] for i in current_batch]).to(self.device).float()
+        next_q_vals = torch.stack([self.history[int(i)][Q_VALS] for i in next_batch]).to(self.device).float()
+        cur_actions = torch.stack([torch.tensor(self.history[int(i)][ACTION]) for i in current_batch]).to(self.device)
+        cur_rewards = torch.stack([torch.tensor(self.history[int(i)][REWARD]) for i in current_batch]).to(self.device).float()
+        cur_terminal = torch.stack([torch.tensor(self.history[int(i)][TERMINAL]) for i in current_batch]).to(self.device).bool()
+        cur_action_dist = torch.stack([self.history[int(i)][ACTION_DIST] for i in current_batch]).to(self.device).float()
 
-            X_train.append(cur_state)
-
-            # define target using DQN update rule
-            target = cur_Q_vals
-            if terminal:
-                target[cur_action] = cur_reward
-            else:
-                next_Q_vals = self.history[batch_idx+1][Q_VALS]
+        X_train = cur_states
+        y_train = cur_q_vals.float().clone().detach()
                 
-                self.update_rule = "cur_reward + self.gamma*(torch.max(next_Q_vals))"
-                target[cur_action] = cur_reward + self.gamma*(torch.max(next_Q_vals))
- 
-            y_train.append(target)
-            # y_pred.append(cur_Q_vals)
-            # TODO: need to backpropagate through action_dist or safety_dist?
-            safety_augmentations.append(self.get_safety_loss(cur_state, action_dist))
-
-        # convert to torch tensors
-        X_train = torch.stack(X_train, dim=0).to(self.device)   
-        y_train = torch.stack(y_train, dim=0).to(self.device)
-        safety_loss = torch.mean(torch.stack(safety_augmentations, dim=0)).to(self.device)
+        # if it is not a terminal state, update the q value with respect to future reward
+        # if it is a terminal state, the q value is just the reward
+        targets = torch.mul(self.gamma, torch.max(next_q_vals, axis=1)[0])
+        y_train[:, cur_actions] = cur_rewards + torch.mul(1-cur_terminal.int().float(), targets)
         
+
+        safety_augmentations =  self.get_safety_loss(cur_states, cur_action_dist)
+        safety_loss = torch.mean(safety_augmentations).to(self.device)
+
         # forward pass
         # TODO: Create target network for DQN
         y_pred = self.func_approx(X_train)
