@@ -162,8 +162,8 @@ class DQNShielded(object):
         else:
             sensor_values = self.shield.get_sensor_values(x)
 
-        sensor_values = torch.Tensor(sensor_values).to(self.device)
-        base_actions = torch.Tensor(base_actions).to(self.device)
+        sensor_values = torch.Tensor(sensor_values).to("cpu")
+        base_actions = torch.Tensor(base_actions).to("cpu")
 
         self.debug_info = {"sensor_value": sensor_values, "base_policy": base_actions}
 
@@ -175,13 +175,13 @@ class DQNShielded(object):
 
         elif self.shield.differentiable:  # PLPG
             # compute the shielded policy
-            actions = self.shield.get_shielded_policy(base_actions.unsqueeze(0).to("cpu"), sensor_values.unsqueeze(0).to("cpu"))
+            actions = self.shield.get_shielded_policy(base_actions.unsqueeze(0), sensor_values.unsqueeze(0))
             # shielded_policy = Categorical(probs=actions)
             safety = self.shield.get_policy_safety(sensor_values.unsqueeze(0), base_actions.unsqueeze(0))
 
             self.debug_info["shielded_policy"] = actions
             self.debug_info["safety"] = safety
-            self.debug_info["action_safety"] = self.shield.get_action_safeties(sensor_values.unsqueeze(0).to("cpu"))
+            self.debug_info["action_safety"] = self.shield.get_action_safeties(sensor_values.unsqueeze(0))
 
         else:  # VSRL
             with torch.no_grad():
@@ -202,7 +202,7 @@ class DQNShielded(object):
                 # log_prob = distribution.log_prob(actions)
                 self.debug_info["shielded_policy"] = shielded_policy.probs
                 self.debug_info["safety"] = safety
-                self.debug_info["action_safety"] = self.shield.get_action_safeties(sensor_values.unsqueeze(0).to("cpu"))
+                self.debug_info["action_safety"] = self.shield.get_action_safeties(sensor_values.unsqueeze(0))
 
                 # return (actions, values, log_prob)
         
@@ -219,7 +219,7 @@ class DQNShielded(object):
 
         # softmax q vals
         Q_values_norm = torch.exp(Q_values) / torch.sum(torch.exp(Q_values))
-        shielded_policy = self.get_shielded_action(state, Q_values_norm.to("cpu")).squeeze(0).to(self.device)
+        shielded_policy = self.get_shielded_action(state, Q_values_norm).squeeze(0).to(self.device)
 
         # self.debug_info =
         action = self.e_greedy(shielded_policy)
