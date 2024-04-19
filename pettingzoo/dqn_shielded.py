@@ -175,7 +175,7 @@ class DQNShielded(object):
 
         elif self.shield.differentiable:  # PLPG
             # compute the shielded policy
-            actions = self.shield.get_shielded_policy(base_actions.unsqueeze(0), sensor_values.unsqueeze(0))
+            actions = self.shield.get_shielded_policy(base_actions.unsqueeze(0).to(self.device), sensor_values.unsqueeze(0).to(self.device))
             # shielded_policy = Categorical(probs=actions)
             safety = self.shield.get_policy_safety(sensor_values.unsqueeze(0), base_actions.unsqueeze(0))
 
