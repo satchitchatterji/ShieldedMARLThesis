@@ -29,7 +29,7 @@ sh_params = {
 
 agents = {}
 
-training_style = "SSPSDQL"
+training_style = "IDQL"
 
 # - IDQL: Independent DQL
 # - SIIDQL: Shield-Independent IDQL
