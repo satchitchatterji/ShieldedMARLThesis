@@ -175,7 +175,7 @@ class DQNShielded(object):
 
         elif self.shield.differentiable:  # PLPG
             # compute the shielded policy
-            actions = self.shield.get_shielded_policy(base_actions.unsqueeze(0).to(self.device), sensor_values.unsqueeze(0).to(self.device))
+            actions = self.shield.get_shielded_policy(base_actions.unsqueeze(0).to("cpu"), sensor_values.unsqueeze(0).to("cpu"))
             # shielded_policy = Categorical(probs=actions)
             safety = self.shield.get_policy_safety(sensor_values.unsqueeze(0), base_actions.unsqueeze(0))
 
@@ -207,7 +207,7 @@ class DQNShielded(object):
                 # return (actions, values, log_prob)
         
         self.debug_info_history.append(self.debug_info)
-        return actions
+        return actions.to(self.device)
 
     def get_decision(self, state):
         """ Wrapper function for returning an action for a given state,
