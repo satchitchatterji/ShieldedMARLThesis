@@ -85,8 +85,9 @@ class DQNShielded(object):
         elif shield_params is None and shield is None:
             self.shield = None
 
-        if self.shield is not None:
-            self.shield.shield_layer.to(self.device)
+        # TODO: add shield to gpu
+        # if self.shield is not None:
+        #     self.shield.shield_layer.to(self.device)
 
         self.alpha = 1
 
@@ -164,6 +165,9 @@ class DQNShielded(object):
             sensor_values = self.get_sensor_value_ground_truth(x)
         else:
             sensor_values = self.shield.get_sensor_values(x)
+
+        sensor_values = sensor_values.to("cpu")
+        base_actions = base_actions.to("cpu")
 
         self.debug_info = {"sensor_value": sensor_values, "base_policy": base_actions}
 
