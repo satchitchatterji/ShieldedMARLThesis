@@ -181,7 +181,7 @@ class DQNShielded(object):
 
             self.debug_info["shielded_policy"] = actions
             self.debug_info["safety"] = safety
-            self.debug_info["action_safety"] = self.shield.get_action_safeties(sensor_values.unsqueeze(0))
+            self.debug_info["action_safety"] = self.shield.get_action_safeties(sensor_values.unsqueeze(0).to("cpu"))
 
         else:  # VSRL
             with torch.no_grad():
@@ -202,7 +202,7 @@ class DQNShielded(object):
                 # log_prob = distribution.log_prob(actions)
                 self.debug_info["shielded_policy"] = shielded_policy.probs
                 self.debug_info["safety"] = safety
-                self.debug_info["action_safety"] = self.shield.get_action_safeties(sensor_values.unsqueeze(0))
+                self.debug_info["action_safety"] = self.shield.get_action_safeties(sensor_values.unsqueeze(0).to("cpu"))
 
                 # return (actions, values, log_prob)
         
