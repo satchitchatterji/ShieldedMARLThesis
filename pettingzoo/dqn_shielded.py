@@ -52,7 +52,7 @@ class DQNShielded(object):
         self.learning_rate = 0.01
 
         self.max_history = 10000
-        self.batch_size = 128
+        self.batch_size = 256
         self.epochs = 1
 
         # memory and bookkeeping
@@ -119,7 +119,9 @@ class DQNShielded(object):
         model = torch.nn.Sequential(
             torch.nn.Linear(input_len, 64),
             torch.nn.ReLU(),
-            torch.nn.Linear(64, 64),
+            torch.nn.Linear(64, 128),
+            torch.nn.ReLU(),
+            torch.nn.Linear(128, 64),
             torch.nn.ReLU(),
             torch.nn.Linear(64, output_len)
         )

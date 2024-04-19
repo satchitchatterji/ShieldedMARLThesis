@@ -126,16 +126,16 @@ for ep in range(2):
 
 env.close()
 
-for agent in reward_hist:
-    plt.plot(reward_hist[agent], label=agent)
-plt.legend()
-plt.show()
+# for agent in reward_hist:
+#     plt.plot(reward_hist[agent], label=agent)
+# plt.legend()
+# plt.show()
 
-for agent in ep_rewards[0]:
-    plt.plot([r[agent] for r in ep_rewards], label=agent)
-plt.plot([r["total"] for r in ep_rewards], label="total")
-plt.legend()
-plt.show()
+# for agent in ep_rewards[0]:
+#     plt.plot([r[agent] for r in ep_rewards], label=agent)
+# plt.plot([r["total"] for r in ep_rewards], label="total")
+# plt.legend()
+# plt.show()
 
 
 # eval
@@ -170,10 +170,10 @@ for ep in range(1):
                 agents[agent].reset()
             break
 
-for agent in reward_hist:
-    plt.plot(reward_hist[agent], label=agent)
-plt.legend()
-plt.show()
+# for agent in reward_hist:
+#     plt.plot(reward_hist[agent], label=agent)
+# plt.legend()
+# plt.show()
 
 print({a:np.sum(reward_hist[a]) for a in reward_hist.keys()})
 
