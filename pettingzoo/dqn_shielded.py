@@ -219,7 +219,7 @@ class DQNShielded(object):
 
         # softmax q vals
         Q_values_norm = torch.exp(Q_values) / torch.sum(torch.exp(Q_values))
-        shielded_policy = self.get_shielded_action(state, Q_values_norm).squeeze(0)
+        shielded_policy = self.get_shielded_action(state, Q_values_norm.to("cpu")).squeeze(0).to(self.device)
 
         # self.debug_info =
         action = self.e_greedy(shielded_policy)
