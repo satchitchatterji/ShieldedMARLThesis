@@ -48,11 +48,11 @@ class DQNShielded(object):
         self.epsilon_decay = 0.999
         self.epsilon_min = 0.1
 
-        self.gamma = 0.99
+        self.gamma = 0.999
         self.learning_rate = 0.01
 
-        self.max_history = 100
-        self.batch_size = 4
+        self.max_history = 10000
+        self.batch_size = 128
         self.epochs = 1
 
         # memory and bookkeeping
