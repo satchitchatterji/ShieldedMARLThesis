@@ -165,9 +165,6 @@ class DQNShielded(object):
         else:
             sensor_values = self.shield.get_sensor_values(x)
 
-        sensor_values = (sensor_values).to("cpu")
-        base_actions = torch.Tensor(base_actions).to("cpu")
-
         self.debug_info = {"sensor_value": sensor_values, "base_policy": base_actions}
 
         actions = None
