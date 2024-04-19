@@ -113,11 +113,11 @@ class DQNShielded(object):
         """ Initialize an MLP as a function approximator """
 
         model = torch.nn.Sequential(
-            torch.nn.Linear(input_len, 32),
+            torch.nn.Linear(input_len, 64),
             torch.nn.ReLU(),
-            torch.nn.Linear(32, 32),
+            torch.nn.Linear(64, 64),
             torch.nn.ReLU(),
-            torch.nn.Linear(32, output_len)
+            torch.nn.Linear(64, output_len)
         )
 
         model.to(self.device)
