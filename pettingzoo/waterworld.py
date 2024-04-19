@@ -85,12 +85,11 @@ def action_wrapper(action):
 reward_hist = {}
 ep_rewards = []
 for ep in range(2):
-    print(f"Episode {ep}")
     wandb.init(project=f"{system}_waterworld", name=f"{training_style}_ep_{ep}_{cur_time}")
     ep_rewards_this = {}
     observations, infos = env.reset()
 
-    for step in trange(max_cycles):
+    for step in trange(max_cycles, desc=f"Episode {ep}"):
 
         actions = {}
         for agent in env.agents:
