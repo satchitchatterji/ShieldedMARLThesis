@@ -53,7 +53,7 @@ class DQNShielded(object):
 
         self.max_history = 10000
         self.batch_size = 512
-        self.epochs = 10
+        self.epochs = 1
 
         # memory and bookkeeping
         self.history = []
