@@ -51,8 +51,8 @@ class DQNShielded(object):
         self.gamma = 0.99
         self.learning_rate = 0.01
 
-        self.max_history = 1000
-        self.batch_size = 128
+        self.max_history = 10000
+        self.batch_size = 512
         self.epochs = 10
 
         # memory and bookkeeping
