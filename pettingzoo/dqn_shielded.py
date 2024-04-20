@@ -18,7 +18,7 @@ ACTION_DIST = 5
 class DQNShielded(object):
     """ Agent that uses the SARSA update rule to learn Q(s,a) estimates,
         using an MLP as a function approximator. """
-    def __init__(self, num_states, num_actions, func_approx=None, shield_params=None, shield=None, get_sensor_value_ground_truth=None):
+    def __init__(self, num_states, num_actions, func_approx=None, shield_params=None, shield=None):
 
         self.observation_type = 'discrete'
         self.action_type = 'discrete'
@@ -44,7 +44,7 @@ class DQNShielded(object):
 
 
         # Hyperparameters
-        self.epsilon = 1.0
+        self.epsilon = 0.1
         self.epsilon_decay = 0.999
         self.epsilon_min = 0.1
 
@@ -68,18 +68,11 @@ class DQNShielded(object):
         self.reward = None
 
         # shield
-        if get_sensor_value_ground_truth is not None:
-            self.get_sensor_value_ground_truth = get_sensor_value_ground_truth
-        else:
-            self.get_sensor_value_ground_truth = lambda x: x
-            print("No sensor value function provided. Assumming ground truth.")
-
-
         # agents can share a shield if a shield is passed in
         assert shield_params is None or shield is None, "Cannot pass in both shield_params and shield"
         self.shield = None
         if shield_params is not None:
-            self.shield = Shield(get_sensor_value_ground_truth=self.get_sensor_value_ground_truth, **shield_params)
+            self.shield = Shield(**shield_params)
         elif shield is not None:
             self.shield = shield
         elif shield_params is None and shield is None:
@@ -118,10 +111,10 @@ class DQNShielded(object):
 
         model = torch.nn.Sequential(
             torch.nn.Linear(input_len, 64),
-            torch.nn.ReLU(),
-            torch.nn.Linear(64, 128),
-            torch.nn.ReLU(),
-            torch.nn.Linear(128, 64),
+            # torch.nn.ReLU(),
+            # torch.nn.Linear(64, 128),
+            # torch.nn.ReLU(),
+            # torch.nn.Linear(128, 64),
             torch.nn.ReLU(),
             torch.nn.Linear(64, output_len)
         )
@@ -154,6 +147,8 @@ class DQNShielded(object):
 
     def act(self, states):
         """ Choose an action for each agent, given the current state """
+        # if sum(states[90:120]) < 30:
+        #     print([i for i, s in enumerate(states[90:120]) if s < 1])
 
         action = self.get_decision(states)
 
@@ -163,9 +158,8 @@ class DQNShielded(object):
         return action
 
     def get_shielded_action(self, x, base_actions):
-        if self.shield is None:
-            sensor_values = self.get_sensor_value_ground_truth(x)
-        else:
+        sensor_values = x
+        if self.shield is not None:
             sensor_values = self.shield.get_sensor_values(x)
 
         sensor_values = sensor_values.to("cpu")

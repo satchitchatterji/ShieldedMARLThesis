@@ -12,20 +12,31 @@ import wandb
 import time
 cur_time = time.time()
 
-pursuer_max_accel=0.01
+from action_wrappers import WaterworldActionWrapper
+from sensor_wrappers import WaterworldSensorWrapper
+
+n_discrete_actions = 5
+pursuer_max_accel = 0.01
+
+
 max_cycles=500
 env = waterworld_v4.parallel_env(render_mode=None, speed_features=False, pursuer_max_accel=pursuer_max_accel, max_cycles=max_cycles)
 env.reset()
 
+action_wrapper = WaterworldActionWrapper(n_discrete_actions, pursuer_max_accel, 1.0)
+sensor_wrapper = WaterworldSensorWrapper(env, output_type="invert")
 
 sh_params = {
     "config_folder": ".",
-    "num_sensors": 152,
-    "num_actions": 5,
+    "num_sensors": sensor_wrapper.num_sensors,
+    "num_actions": action_wrapper.n_actions,
     "differentiable": True,
     "shield_program": "waterworld_shield.pl",
     "observation_type": "ground truth",
+    "get_sensor_value_ground_truth": sensor_wrapper,
 }
+# TODO: have a more complex sensor model
+# TODO: have a more complex action model
 
 agents = {}
 
@@ -41,50 +52,40 @@ training_style = "SSPSDQL"
 
 if training_style == "IDQL":
     for agent in env.agents:
-        agents[agent] = DQNShielded(env.observation_spaces[agent].shape[0], 5)
+        agents[agent] = DQNShielded(env.observation_spaces[agent].shape[0], n_discrete_actions)
 
 elif training_style == "SIIDQL":
     for agent in env.agents:
-        agents[agent] = DQNShielded(env.observation_spaces[agent].shape[0], 5, shield_params=sh_params)
+        agents[agent] = DQNShielded(env.observation_spaces[agent].shape[0], n_discrete_actions, shield_params=sh_params)
 
 elif training_style == "SSIDQL":
-    agents[env.agents[0]] = DQNShielded(env.observation_spaces[env.agents[0]].shape[0], 5, shield_params=sh_params)
+    agents[env.agents[0]] = DQNShielded(env.observation_spaces[env.agents[0]].shape[0], n_discrete_actions, shield_params=sh_params)
     for a, agent in enumerate(env.agents):
         if a != 0:
-            agents[agent] = DQNShielded(env.observation_spaces[agent].shape[0], 5, shield=agents[env.agents[0]].shield)
+            agents[agent] = DQNShielded(env.observation_spaces[agent].shape[0], n_discrete_actions, shield=agents[env.agents[0]].shield)
 
 elif training_style == "PSDQL":
-    agents[env.agents[0]] = DQNShielded(env.observation_spaces[env.agents[0]].shape[0], 5)
+    agents[env.agents[0]] = DQNShielded(env.observation_spaces[env.agents[0]].shape[0], n_discrete_actions)
     for a, agent in enumerate(env.agents):
         if a != 0:
-            agents[agent] = DQNShielded(env.observation_spaces[agent].shape[0], 5, func_approx=agents[env.agents[0]].func_approx)
+            agents[agent] = DQNShielded(env.observation_spaces[agent].shape[0], n_discrete_actions, func_approx=agents[env.agents[0]].func_approx)
 
 elif training_style == "SIPSDQL":
-    agents[env.agents[0]] = DQNShielded(env.observation_spaces[env.agents[0]].shape[0], 5, shield_params=sh_params)
+    agents[env.agents[0]] = DQNShielded(env.observation_spaces[env.agents[0]].shape[0], n_discrete_actions, shield_params=sh_params)
     for a, agent in enumerate(env.agents):
         if a != 0:
-            agents[agent] = DQNShielded(env.observation_spaces[agent].shape[0], 5, func_approx=agents[env.agents[0]].func_approx, shield_params=sh_params)
+            agents[agent] = DQNShielded(env.observation_spaces[agent].shape[0], n_discrete_actions, func_approx=agents[env.agents[0]].func_approx, shield_params=sh_params)
 
 elif training_style == "SSPSDQL":
-    agents[env.agents[0]] = DQNShielded(env.observation_spaces[env.agents[0]].shape[0], 5, shield_params=sh_params)
+    agents[env.agents[0]] = DQNShielded(env.observation_spaces[env.agents[0]].shape[0], n_discrete_actions, shield_params=sh_params)
     for a, agent in enumerate(env.agents):
         if a != 0:
-            agents[agent] = DQNShielded(env.observation_spaces[agent].shape[0], 5, func_approx=agents[env.agents[0]].func_approx, shield=agents[env.agents[0]].shield)
+            agents[agent] = DQNShielded(env.observation_spaces[agent].shape[0], n_discrete_actions, func_approx=agents[env.agents[0]].func_approx, shield=agents[env.agents[0]].shield)
 
-def action_wrapper(action):
-    move = pursuer_max_accel*2/3
-    actions = np.array([
-               [0, move],
-               [0, -move],
-               [-move, 0],
-               [move, 0],
-               [0, 0],
-               ], dtype=np.float32)
-    return actions[action]
 
 reward_hist = {}
 ep_rewards = []
-for ep in range(2):
+for ep in range(0):
     wandb.init(project=f"{system}_waterworld", name=f"{training_style}_ep_{ep}_{cur_time}")
     ep_rewards_this = {}
     observations, infos = env.reset()
@@ -139,6 +140,7 @@ env.close()
 
 
 # eval
+import time
 
 env = waterworld_v4.parallel_env(render_mode="human", speed_features=False, pursuer_max_accel=pursuer_max_accel, max_cycles=max_cycles)
 observations, infos = env.reset()
@@ -150,9 +152,9 @@ reward_hist = {}
 for ep in range(1):
     print(f"Episode {ep}")
     observations, infos = env.reset()
-
-    for step in trange(max_cycles):
-
+    
+    for step in range(max_cycles):
+        # time.sleep(1)
         actions = {}
         for agent in env.agents:
             actions[agent] = action_wrapper(agents[agent].act(observations[agent]))

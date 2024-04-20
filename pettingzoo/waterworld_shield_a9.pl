@@ -1,13 +1,19 @@
 % Waterworld Shield
-% actions: up, down, left, right, none
+% actions: up, down, left, right, up-right, up-left, down-right, down-left, none
 % sensors: 30 obstacles, 30 barriers, 30 food, 30 poison, 30 pursuer, 2 collisions
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%% NotImplemented %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % actions
 action(0)::action(up);
 action(1)::action(down);
 action(2)::action(left);
 action(3)::action(right);
-action(4)::action(none).
+action(4)::action(up-right);
+action(5)::action(down-right);
+action(6)::action(up-left);
+action(7)::action(down-left);
+action(8)::action(none).
 
 % 30 sensors for obstacles
 sensor_value(0)::obstacle(0).
