@@ -3,30 +3,29 @@ pip==21
 numpy
 matplotlib
 torch
-pettingzoo[sisl]
+pettingzoo[sisl, classic]
 tqdm
 wandb
 # -e git+https://github.com/satchitchatterji/ThesisPLS.git@main#egg=pls
 
+# #!/bin/bash
 
-#!/bin/bash
+# #SBATCH --partition=gpu
+# #SBATCH --gpus=1
+# #SBATCH --job-name=CheckEnvironment
+# #SBATCH --ntasks=1
+# #SBATCH --cpus-per-task=18
+# #SBATCH --time=00:05:00
+# #SBATCH --output=SlurmOutputs/slurm_output_%A.out
 
-#SBATCH --partition=gpu
-#SBATCH --gpus=1
-#SBATCH --job-name=CheckEnvironment
-#SBATCH --ntasks=1
-#SBATCH --cpus-per-task=18
-#SBATCH --time=00:05:00
-#SBATCH --output=SlurmOutputs/slurm_output_%A.out
+# module purge
+# module load 2022
+# module load Anaconda3/2022.05
+# module load SWIG/4.0.2-GCCcore-11.3.0
 
-module purge
-module load 2022
-module load Anaconda3/2022.05
-module load SWIG/4.0.2-GCCcore-11.3.0
-
-# Activate your environment
-source activate pg
-wandb enabled
-wandb on
-# Check whether the GPU is available
-srun python -uc "import torch; print('GPU available?', torch.cuda.is_available())"
+# # Activate your environment
+# source activate pg
+# wandb enabled
+# wandb on
+# # Check whether the GPU is available
+# srun python -uc "import torch; print('GPU available?', torch.cuda.is_available())"
