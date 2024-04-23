@@ -9,10 +9,10 @@ action(0)::action(up);
 action(1)::action(down);
 action(2)::action(left);
 action(3)::action(right);
-action(4)::action(up-right);
-action(5)::action(down-right);
-action(6)::action(up-left);
-action(7)::action(down-left);
+action(4)::action(upright);
+action(5)::action(downright);
+action(6)::action(upleft);
+action(7)::action(downleft);
 action(8)::action(none).
 
 % 30 sensors for obstacles
