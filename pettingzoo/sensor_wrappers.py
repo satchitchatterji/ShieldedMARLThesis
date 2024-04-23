@@ -21,7 +21,6 @@ class WaterworldSensorWrapper:
     
 def reduce_to_8(x, use_cuda=True):
     assert len(x) == 162, f"Expected 162 sensor values, got {len(x)}"
-    # TODO: use torch instead of numpy to reduce overhead
     device = torch.device("cuda" if use_cuda and torch.cuda.is_available() else "cpu")
     x_new = torch.zeros(8*5+2, device=device) # 5 types of sensors, 8 ranges, 2 for the last two sensors
     x_new[-1] = 1-x[-1]
