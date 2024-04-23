@@ -1,6 +1,10 @@
 import numpy as np
 
 class WaterworldActionWrapper:
+    """
+    Wrapper for the Waterworld environment's action space.
+    Waterworld has a continuous action space, but we can discretize it into finite actions for e.g. DQN.
+    """
     def __init__(self, n_actions, pursuer_max_accel, max_accel_mult):
         self.pursuer_max_accel = pursuer_max_accel
         self.max_accel_mult = max_accel_mult
