@@ -2,6 +2,7 @@ import numpy as np
 
 from pettingzoo.sisl import waterworld_v4
 from dqn_shielded import DQNShielded
+from ppo_shielded import PPOShielded
 import matplotlib.pyplot as plt
 from tqdm import trange
 
@@ -30,7 +31,7 @@ sensor_wrapper = WaterworldSensorWrapper(env, output_type="reduce_to_8")
 shield_file = ShieldSelector(env_name="waterworld", 
                             n_actions=action_wrapper.n_actions, 
                             n_sensors=sensor_wrapper.num_sensors)
-print(shield_file.file)
+
 sh_params = {
     "config_folder": ".",
     "num_sensors": sensor_wrapper.num_sensors,
@@ -41,6 +42,14 @@ sh_params = {
     "get_sensor_value_ground_truth": sensor_wrapper,
 }
 
+default_ppo_params = {
+    "update_timestep": max_cycles,      # update policy every n timesteps # TODO: check this
+    "K_epochs": 50,               # update policy for K epochs in one PPO update
+    "eps_clip": 0.2,          # clip parameter for PPO
+    "gamma": 0.99,            # discount factor
+    "lr_actor": 0.0003,     # learning rate for actor network
+    "lr_critic": 0.001,       # learning rate for critic network
+}
 # - IDQL: Independent DQL
 # - SIIDQL: Shield-Independent IDQL
 # - SSIDQL: Shield-Sharing IDQL
@@ -50,7 +59,7 @@ sh_params = {
 # - SSPSDQL: Shield-Sharing PS-DQL
 
 agents = {}
-training_style = "SSPSDQL"
+training_style = "IPPO"
 
 if training_style == "IDQL":
     for agent in env.agents:
@@ -84,10 +93,25 @@ elif training_style == "SSPSDQL":
         if a != 0:
             agents[agent] = DQNShielded(env.observation_spaces[agent].shape[0], n_discrete_actions, func_approx=agents[env.agents[0]].func_approx, shield=agents[env.agents[0]].shield)
 
+elif training_style == "IPPO":
+    for agent in env.agents:
+        agents[agent] = PPOShielded(state_dim=env.observation_spaces[agent].shape[0], 
+                                    action_dim=n_discrete_actions, 
+                                    policy_kw_args={"get_sensor_value_ground_truth":sensor_wrapper},
+                                    **default_ppo_params)
+
+elif training_style == "SIPPO":
+    for agent in env.agents:
+        agents[agent] = PPOShielded(state_dim=env.observation_spaces[agent].shape[0], 
+                                    action_dim=n_discrete_actions, 
+                                    alpha=1, 
+                                    policy_safety_params=sh_params,
+                                    policy_kw_args={"shield_params":sh_params, "get_sensor_value_ground_truth":sensor_wrapper},
+                                    **default_ppo_params)
 
 # training episodes
 reward_hists = []
-for ep in range(1):
+for ep in range(10):
     wandb.init(project=f"{system}_waterworld", name=f"{training_style}_ep_{ep}_{cur_time}")
     reward_hist = run_episode(env, agents, max_cycles, action_wrapper, ep)
     reward_hists.append(reward_hist)
@@ -108,4 +132,4 @@ for ep in range(1):
 for reward_hist in reward_hists:
     print({a:np.sum(reward_hist[a]) for a in reward_hist.keys()})
 
-env.close()
+env.close() 

@@ -9,30 +9,36 @@ def run_episode(env, agents, max_cycles, action_wrapper, ep):
     observations, infos = env.reset()
 
     for step in trange(max_cycles, desc=f"Episode {ep}"):
+    # for step in range(max_cycles):
 
         actions = {}
         for agent in env.agents:
             actions[agent] = action_wrapper(agents[agent].act(observations[agent]))
-    
+        
         observations, rewards, terminations, truncations, infos = env.step(actions)
         
-        wandb.log({f"reward_{agent}": rewards[agent] for agent in env.agents})
-        wandb.log({"mean_reward": np.mean([rewards[agent] for agent in env.agents])})
-        wandb.log({f"safety_{agent}": agents[agent].debug_info["safety"]  for agent in env.agents if "safety" in agents[agent].debug_info})
+        # wandb.log({f"reward_{agent}": rewards[agent] for agent in env.agents})
+        # wandb.log({"mean_reward": np.mean([rewards[agent] for agent in env.agents])})
+        # wandb.log({f"safety_{agent}": agents[agent].debug_info["safety"]  for agent in env.agents if "safety" in agents[agent].debug_info})
+        
 
-        for agent in env.agents:
+        for agent in agents.keys():
             agents[agent].update_reward(rewards[agent], terminations[agent] or truncations[agent])
 
-        for agent in env.agents:
+        for agent in agents.keys():
             if agent not in reward_hist:
                 reward_hist[agent] = []
             reward_hist[agent].append(rewards[agent])
-            
-        truncs = [terminations[agent] or truncations[agent] for agent in env.agents]
-        if all(truncs):
-            for agent in env.agents:
-                agents[agent].reset()
-            break
+        
+        # FIXME: This is a hack to reset the agents when the episode ends, ends one step too early
+        # truncs = [terminations[agent] or truncations[agent] for agent in env.agents]
+        # if all(truncs):
+        #     for agent in env.agents:
+        #         agents[agent].reset()
+        #     break
+
+
+            # print(terminations, truncations)
 
     return reward_hist
 
