@@ -43,7 +43,7 @@ sh_params = {
 }
 
 default_ppo_params = {
-    "update_timestep": max_cycles,      # update policy every n timesteps # TODO: check this
+    "update_timestep": int(max_cycles/3),      # update policy every n timesteps # TODO: check this
     "K_epochs": 50,               # update policy for K epochs in one PPO update
     "eps_clip": 0.2,          # clip parameter for PPO
     "gamma": 0.99,            # discount factor
@@ -59,7 +59,7 @@ default_ppo_params = {
 # - SSPSDQL: Shield-Sharing PS-DQL
 
 agents = {}
-training_style = "IPPO"
+training_style = "SIPPO"
 
 if training_style == "IDQL":
     for agent in env.agents:

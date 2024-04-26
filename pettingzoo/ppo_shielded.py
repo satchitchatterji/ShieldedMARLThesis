@@ -92,7 +92,6 @@ class ActorCriticShielded(nn.Module):
         self.shield = None
         if shield_params is not None:
             self.shield = Shield(
-                get_sensor_value_ground_truth=get_sensor_value_ground_truth,
                 **shield_params,
             )
         elif shield is not None:
@@ -116,6 +115,17 @@ class ActorCriticShielded(nn.Module):
             return distribution.mode()
         return distribution.sample()
     
+    def get_shielded_policy_batch_agnostic(self, base_actions, sensor_values):
+        if self.shield is None:
+            raise NotImplementedError("Shielded policy is only supported with a shield.")
+        
+        # single item batch
+        if len(sensor_values.shape) == 1:
+            return self.shield.get_shielded_policy(base_actions.unsqueeze(0), sensor_values.unsqueeze(0)).squeeze(0)
+        
+        # batch
+        return self.shield.get_shielded_policy(base_actions, sensor_values)
+
     def act(self, state, deterministic=False):
 
         if self.has_continuous_action_space:
@@ -141,7 +151,7 @@ class ActorCriticShielded(nn.Module):
 
         elif self.shield.differentiable:  # PLPG
             # compute the shielded policy
-            actions = self.shield.get_shielded_policy(base_actions, sensor_values)
+            actions = self.get_shielded_policy_batch_agnostic(base_actions, sensor_values)
             shielded_policy = Categorical(probs=actions)
 
             # get the most probable action of the shielded policy if we want to use a deterministic policy,
@@ -155,6 +165,7 @@ class ActorCriticShielded(nn.Module):
 
         else:  # VSRL
             with torch.no_grad():
+                # TODO: batch agnostic version
                 actions = self.shield.get_shielded_policy_vsrl(
                     base_actions, sensor_values
                 )
@@ -190,8 +201,9 @@ class ActorCriticShielded(nn.Module):
         else:
             action_probs = self.actor(state)
             distribution = Categorical(action_probs)
-            base_actions = self.get_actions(distribution, deterministic=False)
-        
+            # base_actions = self.get_actions(distribution, deterministic=False)
+            base_actions = action_probs
+
         dist_entropy = None
         if self.shield is None or not self.shield.differentiable:
             sensor_values = self.get_sensor_value_ground_truth(state)
@@ -202,12 +214,26 @@ class ActorCriticShielded(nn.Module):
         elif self.shield.differentiable:  # PLPG
             sensor_values = self.shield.get_sensor_values(state)
             # compute the shielded policy
-            shielded_actions = self.shield.get_shielded_policy(base_actions, sensor_values)
+            shielded_actions = self.get_shielded_policy_batch_agnostic(base_actions, sensor_values)
             shielded_policy = Categorical(probs=shielded_actions)
             log_prob = shielded_policy.log_prob(action)
             dist_entropy = shielded_policy.entropy()
             self.info = {"sensor_value": sensor_values, "base_policy": base_actions}
             
+        # elif self.shield.differentiable:  # PLPG
+        #     # compute the shielded policy
+        #     actions = self.get_shielded_policy_batch_agnostic(base_actions, sensor_values)
+        #     shielded_policy = Categorical(probs=actions)
+
+        #     # get the most probable action of the shielded policy if we want to use a deterministic policy,
+        #     # otherwuse, sample an action
+        #     if deterministic:
+        #         actions = torch.argmax(shielded_policy.probs, dim=1)
+        #     else:
+        #         actions = shielded_policy.sample()
+
+        #     log_prob = shielded_policy.log_prob(actions)
+
         else:  # VSRL
             sensor_values = self.shield.get_sensor_values(state)
             log_prob = distribution.log_prob(action)
