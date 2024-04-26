@@ -273,6 +273,13 @@ class PPOShielded:
         
         self.buffer = RolloutBuffer()
 
+        self.lr_actor = lr_actor
+        self.lr_critic = lr_critic
+        self.policy_kw_args = policy_kw_args
+        self.state_dim = state_dim
+        self.action_dim = action_dim
+        self.has_continuous_action_space = has_continuous_action_space
+        self.action_std_init = action_std_init
         self.policy = ActorCriticShielded(state_dim, action_dim, has_continuous_action_space, action_std_init, **policy_kw_args).to(device)
         self.optimizer = torch.optim.Adam([
                         {'params': self.policy.actor.parameters(), 'lr': lr_actor},
@@ -289,6 +296,20 @@ class PPOShielded:
         self.alpha = alpha
         self.policy_safety_calculater = Shield(**policy_safety_params)
         self.time_step = 0
+
+    def set_policy(self, policy):
+        del self.policy
+        del self.policy_old
+        del self.optimizer
+        
+        self.policy = policy.to(device)
+        self.optimizer = torch.optim.Adam([
+                {'params': self.policy.actor.parameters(), 'lr': self.lr_actor},
+                {'params': self.policy.critic.parameters(), 'lr': self.lr_critic}
+            ])
+        self.policy_old = ActorCriticShielded(self.state_dim, self.action_dim, self.has_continuous_action_space, self.action_std_init, **self.policy_kw_args).to(device)
+        self.policy_old.load_state_dict(self.policy.state_dict())
+
 
     def set_action_std(self, new_action_std):
         if self.has_continuous_action_space:

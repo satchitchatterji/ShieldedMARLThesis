@@ -58,8 +58,12 @@ default_ppo_params = {
 # - SIPSDQL: Shield-Independent PS-DQL
 # - SSPSDQL: Shield-Sharing PS-DQL
 
+# TODO: The shield has no learning elements so all the SS variants are the same as the SI variants
+
 agents = {}
-training_style = "SIPPO"
+training_style = "SACSPPO"
+
+############################################ DQL ############################################
 
 if training_style == "IDQL":
     for agent in env.agents:
@@ -93,6 +97,8 @@ elif training_style == "SSPSDQL":
         if a != 0:
             agents[agent] = DQNShielded(env.observation_spaces[agent].shape[0], n_discrete_actions, func_approx=agents[env.agents[0]].func_approx, shield=agents[env.agents[0]].shield)
 
+############################################ PPO ############################################
+
 elif training_style == "IPPO":
     for agent in env.agents:
         agents[agent] = PPOShielded(state_dim=env.observation_spaces[agent].shape[0], 
@@ -108,6 +114,51 @@ elif training_style == "SIPPO":
                                     policy_safety_params=sh_params,
                                     policy_kw_args={"shield_params":sh_params, "get_sensor_value_ground_truth":sensor_wrapper},
                                     **default_ppo_params)
+
+elif training_style == "SSIPPO":
+    agents[env.agents[0]] = PPOShielded(state_dim=env.observation_spaces[env.agents[0]].shape[0], 
+                                    action_dim=n_discrete_actions, 
+                                    alpha=1, 
+                                    policy_safety_params=sh_params,
+                                    policy_kw_args={"shield_params":sh_params, "get_sensor_value_ground_truth":sensor_wrapper},
+                                    **default_ppo_params)
+    for a, agent in enumerate(env.agents):
+        if a != 0:
+            agents[agent] = PPOShielded(state_dim=env.observation_spaces[agent].shape[0], 
+                                    action_dim=n_discrete_actions, 
+                                    alpha=1,
+                                    policy_safety_params=sh_params,
+                                    policy_kw_args={"shield": agents[env.agents[0]].policy.shield, "get_sensor_value_ground_truth":sensor_wrapper},
+                                    **default_ppo_params)
+
+elif training_style == "ACSPPO":
+    for agent in env.agents:
+        agents[agent] = PPOShielded(state_dim=env.observation_spaces[agent].shape[0], 
+                                    action_dim=n_discrete_actions, 
+                                    alpha=1, 
+                                    policy_safety_params=sh_params,
+                                    policy_kw_args={"shield_params":sh_params, "get_sensor_value_ground_truth":sensor_wrapper},
+                                    **default_ppo_params)
+    for a, agent in enumerate(env.agents):
+        if a != 0:
+            agents[agent].set_policy(agents[env.agents[0]].policy)
+
+elif training_style == "SACSPPO":
+    agents[env.agents[0]] = PPOShielded(state_dim=env.observation_spaces[env.agents[0]].shape[0], 
+                                    action_dim=n_discrete_actions, 
+                                    alpha=1, 
+                                    policy_safety_params=sh_params,
+                                    policy_kw_args={"shield_params":sh_params, "get_sensor_value_ground_truth":sensor_wrapper},
+                                    **default_ppo_params)
+    for a, agent in enumerate(env.agents):
+        if a != 0:
+            agents[agent] = PPOShielded(state_dim=env.observation_spaces[agent].shape[0], 
+                                    action_dim=n_discrete_actions, 
+                                    alpha=1,
+                                    policy_safety_params=sh_params,
+                                    policy_kw_args={"shield": agents[env.agents[0]].policy.shield, "get_sensor_value_ground_truth":sensor_wrapper},
+                                    **default_ppo_params)
+            agents[agent].set_policy(agents[env.agents[0]].policy)
 
 # training episodes
 reward_hists = []
