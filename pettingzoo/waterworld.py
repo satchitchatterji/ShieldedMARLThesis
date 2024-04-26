@@ -63,7 +63,7 @@ default_ppo_params = {
 agents = {}
 training_style = "SACSPPO"
 
-############################################ DQL ############################################
+############################################ IDQL ############################################
 
 if training_style == "IDQL":
     for agent in env.agents:
@@ -78,6 +78,8 @@ elif training_style == "SSIDQL":
     for a, agent in enumerate(env.agents):
         if a != 0:
             agents[agent] = DQNShielded(env.observation_spaces[agent].shape[0], n_discrete_actions, shield=agents[env.agents[0]].shield)
+
+############################################ PSDQL ############################################
 
 elif training_style == "PSDQL":
     agents[env.agents[0]] = DQNShielded(env.observation_spaces[env.agents[0]].shape[0], n_discrete_actions)
@@ -97,7 +99,7 @@ elif training_style == "SSPSDQL":
         if a != 0:
             agents[agent] = DQNShielded(env.observation_spaces[agent].shape[0], n_discrete_actions, func_approx=agents[env.agents[0]].func_approx, shield=agents[env.agents[0]].shield)
 
-############################################ PPO ############################################
+############################################ IPPO ############################################
 
 elif training_style == "IPPO":
     for agent in env.agents:
@@ -130,6 +132,8 @@ elif training_style == "SSIPPO":
                                     policy_safety_params=sh_params,
                                     policy_kw_args={"shield": agents[env.agents[0]].policy.shield, "get_sensor_value_ground_truth":sensor_wrapper},
                                     **default_ppo_params)
+            
+############################################ ACSPPO ############################################
 
 elif training_style == "ACSPPO":
     for agent in env.agents:
