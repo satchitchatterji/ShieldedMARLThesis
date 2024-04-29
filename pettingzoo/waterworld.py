@@ -50,56 +50,53 @@ default_ppo_params = {
     "lr_actor": 0.0003,     # learning rate for actor network
     "lr_critic": 0.001,       # learning rate for critic network
 }
-# - IDQL: Independent DQL
-# - SIIDQL: Shield-Independent IDQL
-# - SSIDQL: Shield-Sharing IDQL
+# - IQL: Independent Q-Learning
+# - SIQL: Shielded IQL
 
-# - PSDQL: Parameter-Sharing DQL
-# - SIPSDQL: Shield-Independent PS-DQL
-# - SSPSDQL: Shield-Sharing PS-DQL
+# - PSIQL: Parameter-Sharing IQL
+# - SPSIQL: Shielded PSIQL
+
+# - IPPO: Independent PPO (independent actors, critics)
+# - SIPPO: Shielded IPPO
+
+# - MAPPO: Multi-agent PPO (shared critics, independent actors)
+# - SMAPPO: Shielded MAPPO
+
+# - ACSPPO: Actor-Critic Sharing PPO
+# - SACSPPO: Shielded ACSPPO
 
 # TODO: The shield has no learning elements so all the SS variants are the same as the SI variants
+# Instead, look at homogeneous vs heterogeneous shields
 
 agents = {}
 training_style = "SACSPPO"
 
 ############################################ IDQL ############################################
 
-if training_style == "IDQL":
+if training_style == "IQL":
     for agent in env.agents:
         agents[agent] = DQNShielded(env.observation_spaces[agent].shape[0], n_discrete_actions)
 
-elif training_style == "SIIDQL":
+elif training_style == "SIQL":
     for agent in env.agents:
         agents[agent] = DQNShielded(env.observation_spaces[agent].shape[0], n_discrete_actions, shield_params=sh_params)
 
-elif training_style == "SSIDQL":
-    agents[env.agents[0]] = DQNShielded(env.observation_spaces[env.agents[0]].shape[0], n_discrete_actions, shield_params=sh_params)
-    for a, agent in enumerate(env.agents):
-        if a != 0:
-            agents[agent] = DQNShielded(env.observation_spaces[agent].shape[0], n_discrete_actions, shield=agents[env.agents[0]].shield)
-
 ############################################ PSDQL ############################################
 
-elif training_style == "PSDQL":
+elif training_style == "PSIQL":
     agents[env.agents[0]] = DQNShielded(env.observation_spaces[env.agents[0]].shape[0], n_discrete_actions)
     for a, agent in enumerate(env.agents):
         if a != 0:
             agents[agent] = DQNShielded(env.observation_spaces[agent].shape[0], n_discrete_actions, func_approx=agents[env.agents[0]].func_approx)
 
-elif training_style == "SIPSDQL":
+elif training_style == "SPSIQL":
     agents[env.agents[0]] = DQNShielded(env.observation_spaces[env.agents[0]].shape[0], n_discrete_actions, shield_params=sh_params)
     for a, agent in enumerate(env.agents):
         if a != 0:
             agents[agent] = DQNShielded(env.observation_spaces[agent].shape[0], n_discrete_actions, func_approx=agents[env.agents[0]].func_approx, shield_params=sh_params)
 
-elif training_style == "SSPSDQL":
-    agents[env.agents[0]] = DQNShielded(env.observation_spaces[env.agents[0]].shape[0], n_discrete_actions, shield_params=sh_params)
-    for a, agent in enumerate(env.agents):
-        if a != 0:
-            agents[agent] = DQNShielded(env.observation_spaces[agent].shape[0], n_discrete_actions, func_approx=agents[env.agents[0]].func_approx, shield=agents[env.agents[0]].shield)
-
 ############################################ IPPO ############################################
+# IPPO according to Yu et al. 2022 is a multi-agent version of PPO with independent critics and actors
 
 elif training_style == "IPPO":
     for agent in env.agents:
@@ -117,7 +114,23 @@ elif training_style == "SIPPO":
                                     policy_kw_args={"shield_params":sh_params, "get_sensor_value_ground_truth":sensor_wrapper},
                                     **default_ppo_params)
 
-elif training_style == "SSIPPO":
+
+############################################ MAPPO ############################################
+# MAPPO according to Yu et al. 2022 is a multi-agent version of PPO with shared critics and separate actors
+
+elif training_style == "MAPPO":
+    for agent in env.agents:
+        agents[agent] = PPOShielded(state_dim=env.observation_spaces[agent].shape[0], 
+                                    action_dim=n_discrete_actions, 
+                                    alpha=1, 
+                                    policy_safety_params=sh_params,
+                                    policy_kw_args={"shield_params":sh_params, "get_sensor_value_ground_truth":sensor_wrapper},
+                                    **default_ppo_params)
+    for a, agent in enumerate(env.agents):
+        if a != 0:
+            agents[agent].set_policy_critic(agents[env.agents[0]].policy.critic)
+
+elif training_style == "SMAPPO":
     agents[env.agents[0]] = PPOShielded(state_dim=env.observation_spaces[env.agents[0]].shape[0], 
                                     action_dim=n_discrete_actions, 
                                     alpha=1, 
@@ -132,7 +145,8 @@ elif training_style == "SSIPPO":
                                     policy_safety_params=sh_params,
                                     policy_kw_args={"shield": agents[env.agents[0]].policy.shield, "get_sensor_value_ground_truth":sensor_wrapper},
                                     **default_ppo_params)
-            
+            agents[agent].set_policy_critic(agents[env.agents[0]].policy.critic)
+
 ############################################ ACSPPO ############################################
 
 elif training_style == "ACSPPO":
@@ -164,6 +178,8 @@ elif training_style == "SACSPPO":
                                     **default_ppo_params)
             agents[agent].set_policy(agents[env.agents[0]].policy)
 
+############################################ TRAINING ############################################
+
 # training episodes
 reward_hists = []
 for ep in range(10):
@@ -173,6 +189,9 @@ for ep in range(10):
     wandb.finish()
 env.close()
 print(reward_hists)
+
+############################################ EVALUATION ############################################
+
 
 # set up environment
 env = waterworld_v4.parallel_env(render_mode="human", n_sensors=n_sensors, speed_features=False, pursuer_max_accel=pursuer_max_accel, max_cycles=max_cycles)

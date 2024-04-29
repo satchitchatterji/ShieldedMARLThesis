@@ -244,7 +244,6 @@ class ActorCriticShielded(nn.Module):
         
         return log_prob, state_values, dist_entropy
 
-
 class PPOShielded:
     def __init__(self, 
                  state_dim, 
@@ -301,7 +300,7 @@ class PPOShielded:
         del self.policy
         del self.policy_old
         del self.optimizer
-        
+
         self.policy = policy.to(device)
         self.optimizer = torch.optim.Adam([
                 {'params': self.policy.actor.parameters(), 'lr': self.lr_actor},
@@ -310,6 +309,27 @@ class PPOShielded:
         self.policy_old = ActorCriticShielded(self.state_dim, self.action_dim, self.has_continuous_action_space, self.action_std_init, **self.policy_kw_args).to(device)
         self.policy_old.load_state_dict(self.policy.state_dict())
 
+    def set_policy_critic(self, critic):
+        del self.optimizer
+
+        self.policy.critic = critic.to(device)
+        self.optimizer = torch.optim.Adam([
+                {'params': self.policy.actor.parameters(), 'lr': self.lr_actor},
+                {'params': self.policy.critic.parameters(), 'lr': self.lr_critic}
+            ])
+        self.policy_old = ActorCriticShielded(self.state_dim, self.action_dim, self.has_continuous_action_space, self.action_std_init, **self.policy_kw_args).to(device)
+        self.policy_old.load_state_dict(self.policy.state_dict())
+
+    def set_policy_actor(self, actor):
+        del self.optimizer
+
+        self.policy.actor = actor.to(device)
+        self.optimizer = torch.optim.Adam([
+                {'params': self.policy.actor.parameters(), 'lr': self.lr_actor},
+                {'params': self.policy.critic.parameters(), 'lr': self.lr_critic}
+            ])
+        self.policy_old = ActorCriticShielded(self.state_dim, self.action_dim, self.has_continuous_action_space, self.action_std_init, **self.policy_kw_args).to(device)
+        self.policy_old.load_state_dict(self.policy.state_dict())
 
     def set_action_std(self, new_action_std):
         if self.has_continuous_action_space:
