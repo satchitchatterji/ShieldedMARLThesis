@@ -1,0 +1,322 @@
+import functools
+
+import gymnasium
+from gymnasium.spaces import Discrete, Box
+
+from pettingzoo import ParallelEnv
+from pettingzoo.utils import parallel_to_aec, wrappers
+
+import numpy as np
+
+LEFT = 0
+RIGHT = 1
+UP = 2
+DOWN = 3
+STAY = 4
+MOVES = [LEFT, RIGHT, UP, DOWN, STAY]
+NUM_ITERS = 100
+GRID_SIZE = (5, 5)
+NOTHING = 0
+AGENT = 1
+BOTH = 2
+PLANT = 3
+STAG = 4
+PLANT_REWARD = 1
+STAG_REWARD = 10
+STAG_PENALTY = 1
+
+def env(render_mode=None):
+    """
+    The env function often wraps the environment in wrappers by default.
+    You can find full documentation for these methods
+    elsewhere in the developer documentation.
+    """
+    internal_render_mode = render_mode if render_mode != "ansi" else "human"
+    env = raw_env(render_mode=internal_render_mode)
+    # This wrapper is only for environments which print results to the terminal
+    if render_mode == "ansi":
+        env = wrappers.CaptureStdoutWrapper(env)
+    # this wrapper helps error handling for discrete action spaces
+    env = wrappers.AssertOutOfBoundsWrapper(env)
+    # Provides a wide vareity of helpful user errors
+    # Strongly recommended
+    env = wrappers.OrderEnforcingWrapper(env)
+    return env
+
+
+def raw_env(render_mode=None):
+    """
+    To support the AEC API, the raw_env() function just uses the from_parallel
+    function to convert from a ParallelEnv to an AEC env
+    """
+    env = parallel_env(render_mode=render_mode)
+    env = parallel_to_aec(env)
+    return env
+
+
+class parallel_env(ParallelEnv):
+    metadata = {"render_modes": ["human"], "name": "markov_stag_hunt"}
+
+    def __init__(self, render_mode=None, max_cycles=100):
+        """
+        The init method takes in environment arguments and should define the following attributes:
+        - possible_agents
+        - render_mode
+
+        Note: as of v1.18.1, the action_spaces and observation_spaces attributes are deprecated.
+        Spaces should be defined in the action_space() and observation_space() methods.
+        If these methods are not overridden, spaces will be inferred from self.observation_spaces/action_spaces, raising a warning.
+
+        These attributes should not be changed after initialization.
+        """
+        self.possible_agents = ["player_" + str(r) for r in range(2)]
+
+        # optional: a mapping between agent name and ID
+        self.agent_name_mapping = dict(
+            zip(self.possible_agents, list(range(len(self.possible_agents))))
+        )
+        self.render_mode = render_mode
+        self.max_cycles = max_cycles
+
+    # Observation space should be defined here.
+    # lru_cache allows observation and action spaces to be memoized, reducing clock cycles required to get each agent's space.
+    # If your spaces change over time, remove this line (disable caching).
+    @functools.lru_cache(maxsize=None)
+    def observation_space(self, agent):
+        # gymnasium spaces are defined and documented here: https://gymnasium.farama.org/api/spaces/
+        return Box(low=0, high=4, shape=GRID_SIZE, dtype=int)
+        # 0: nothing, 1: agent, 2: both, 3: plant, 4: stag
+
+    # Action space should be defined here.
+    # If your spaces change over time, remove this line (disable caching).
+    @functools.lru_cache(maxsize=None)
+    def action_space(self, agent):
+        return Discrete(len(MOVES))
+        
+    def show_game(self):
+        rows, cols = GRID_SIZE
+        string = ""
+        string += "|"+"-"*int(cols*4) + "\n|"
+
+        for row in self.grid:
+            for item in row:
+                string += self.symbols[item] + " | "
+            string += "\n|"
+        string += "-"*int(cols*4)
+
+        return string
+
+    def render(self):
+        """
+        Renders the environment. In human mode, it can print to terminal, open
+        up a graphical window, or open up some other display that a human can see and understand.
+        """
+        if self.render_mode is None:
+            gymnasium.logger.warn(
+                "You are calling render method without specifying any render mode."
+            )
+            return
+
+        if len(self.agents) == 2:
+            string = self.show_game()
+        else:
+            string = "Game over"
+        print(string)
+
+    def close(self):
+        """
+        Close should release any graphical displays, subprocesses, network connections
+        or any other environment data which should not be kept around after the
+        user is no longer using the environment.
+        """
+        pass
+
+    def generate_plants_and_stag(self):
+        # starting with 2 plants
+        while np.sum(self.grid == PLANT) < 2:
+            x,y = np.random.randint(0, GRID_SIZE[0]), np.random.randint(0, GRID_SIZE[1])
+            if self.grid[x][y] == 0:
+                self.grid[x][y] = PLANT
+                self.plant_positions.append((x,y))
+        
+        # starting with 1 stag
+        while np.sum(self.grid == STAG) < 1:
+            x,y = np.random.randint(0, GRID_SIZE[0]), np.random.randint(0, GRID_SIZE[1])
+            if self.grid[x][y] == 0:
+                self.grid[x][y] = STAG
+
+    def generate_starting_grid(self):
+        self.grid = np.zeros(GRID_SIZE, dtype=np.int32)
+        self.agent_positions = {}
+        for a in self.agents:
+            x,y = np.random.randint(0, GRID_SIZE[0]), np.random.randint(0, GRID_SIZE[1])
+            self.grid[x][y] = AGENT if self.grid[x][y] == NOTHING else BOTH
+            self.agent_positions[a] = (x,y)
+
+        self.generate_plants_and_stag()
+
+        return self.grid
+
+    def move_stag_towards_closest_agent(self):
+        stag_x, stag_y = np.where(self.grid == STAG)
+        stag_x, stag_y = stag_x[0], stag_y[0]
+        closest_agent = None
+        closest_dist = np.inf
+        for a in self.agents:
+            x,y = self.agent_positions[a]
+            dist = np.abs(stag_x - x) + np.abs(stag_y - y)
+            if dist < closest_dist:
+                closest_dist = dist
+                closest_agent = a
+        
+        # stag moves with 75% probability towards closest agent
+        if np.random.rand() < 0.75 and closest_agent is not None:
+            x,y = self.agent_positions[closest_agent]
+            if stag_x < x:
+                return UP
+            elif stag_x > x:
+                return DOWN
+            elif stag_y < y:
+                return LEFT
+            elif stag_y > y:
+                return RIGHT
+        else:
+            return np.random.choice(MOVES)
+
+    def move_stag(self, move):
+        stag_x, stag_y = np.where(self.grid == STAG)
+        stag_x, stag_y = stag_x[0], stag_y[0]
+
+        if move == LEFT:
+            stag_y = max(0, stag_y-1)
+        elif move == RIGHT:
+            stag_y = min(GRID_SIZE[1]-1, stag_y+1)
+        elif move == UP:
+            stag_x = max(0, stag_x-1)
+        elif move == DOWN:
+            stag_x = min(GRID_SIZE[0]-1, stag_x+1)
+        
+        # do not move if there is a plant or agent in the new position
+        if self.grid[stag_x][stag_y] == NOTHING:
+            self.grid[self.grid == STAG] = NOTHING
+            self.grid[stag_x][stag_y] = STAG
+
+    def update_grid(self, actions):
+        old_grid = self.grid.copy()
+        old_positions = self.agent_positions.copy()
+        # update agent positions
+        for a in self.agents:
+            x,y = self.agent_positions[a]
+            move = actions[a]
+            if move == LEFT:
+                y = max(0, y-1)
+            elif move == RIGHT:
+                y = min(GRID_SIZE[1]-1, y+1)
+            elif move == UP:
+                x = max(0, x-1)
+            elif move == DOWN:
+                x = min(GRID_SIZE[0]-1, x+1)
+            self.agent_positions[a] = (x,y)
+
+        rewards = {a: 0 for a in self.agents}
+
+        # check if agent is on plant
+        for a in self.agents:
+            if old_grid[self.agent_positions[a]] == PLANT:
+                rewards[a] += PLANT_REWARD
+                self.grid[self.agent_positions[a]] = NOTHING
+
+        # check if both agents are on stag
+        if all([old_grid[self.agent_positions[a]] == STAG for a in self.agents]):
+            for a in self.agents:
+                rewards[a] += STAG_REWARD
+                self.grid[self.agent_positions[a]] = NOTHING
+
+        # check if agent is on stag alone
+        for a in self.agents:
+            if old_grid[self.agent_positions[a]] == STAG:
+                stag_alone = True
+                for a2 in self.agents:
+                    if a2 != a and self.grid[self.agent_positions[a2]] != STAG:
+                        stag_alone = False
+                        break
+                if stag_alone:
+                    rewards[a] -= STAG_PENALTY
+                    self.grid[self.agent_positions[a]] = NOTHING
+        
+        for a in self.agents:
+            old_x, old_y = old_positions[a]
+            self.grid[old_x][old_y] = NOTHING
+
+        # update grid with agent positions
+        for a in self.agents:
+            x,y = self.agent_positions[a]
+            self.grid[x][y] = BOTH if self.grid[x][y] == AGENT else AGENT
+            
+
+        # regenerate plants and stag if they were eaten
+        if np.sum(self.grid == PLANT) < 2 or np.sum(self.grid == STAG) < 1:
+            self.generate_plants_and_stag()
+
+        # move stag
+        move = self.move_stag_towards_closest_agent()
+        self.move_stag(move)
+
+        return rewards
+
+    def reset(self, seed=None, options=None):
+        # TODO: Implement a reset function
+        """
+        Reset needs to initialize the `agents` attribute and must set up the
+        environment so that render(), and step() can be called without issues.
+        Here it initializes the `num_moves` variable which counts the number of
+        hands that are played.
+        Returns the observations for each agent
+        """
+        self.agents = self.possible_agents[:]
+        self.num_moves = 0
+        self.plant_positions = []
+        self.grid = self.generate_starting_grid()
+        observations = {agent: self.grid for agent in self.agents}
+        infos = {agent: {} for agent in self.agents}
+        self.state = observations
+        # self.symbols = {0:" ", 1:"🔴", 2:"🔵", 3:"🟢", 4:"⚪"}
+        self.symbols = {0:" ", 1:"A", 2:"B", 3:"P", 4:"S"}
+        return observations, infos
+
+    def step(self, actions):
+        """
+        step(action) takes in an action for each agent and should return the
+        - observations
+        - rewards
+        - terminations
+        - truncations
+        - infos
+        dicts where each dict looks like {agent_1: item_1, agent_2: item_2}
+        """
+        # If a user passes in actions with no agents, then just return empty observations, etc.
+        if not actions:
+            self.agents = []
+            return {}, {}, {}, {}, {}
+
+        # rewards for all agents are placed in the rewards dictionary to be returned
+        rewards = self.update_grid(actions)
+
+        terminations = {agent: False for agent in self.agents}
+
+        self.num_moves += 1
+        env_truncation = self.num_moves >= self.max_cycles
+        truncations = {agent: env_truncation for agent in self.agents}
+        observations = {agent: self.grid for agent in self.agents}
+        self.state = observations
+
+        # typically there won't be any information in the infos, but there must
+        # still be an entry for each agent
+        infos = {agent: {} for agent in self.agents}
+
+        if env_truncation:
+            self.agents = []
+
+        if self.render_mode == "human":
+            self.render()
+        return observations, rewards, terminations, truncations, infos
