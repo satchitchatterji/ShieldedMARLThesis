@@ -8,24 +8,32 @@ from pettingzoo.utils import parallel_to_aec, wrappers
 
 import numpy as np
 
+# controls
 LEFT = 0
 RIGHT = 1
 UP = 2
 DOWN = 3
 STAY = 4
 MOVES = [LEFT, RIGHT, UP, DOWN, STAY]
+
+# board params
+STAG_MOVE_PROB = 0.8
 NUM_ITERS = 10
 GRID_SIZE = (5, 5)
+
+# internal grid values
 NOTHING = 0
 AGENT = 1
 BOTH = 2
 PLANT = 3
 STAG = 4
+
+# rewards
 PLANT_REWARD = 2
 STAG_REWARD = 10
 STAG_PENALTY = 2
-STAG_MOVE_PROB = 0.8
 
+# observation types for agents
 N_OBS_TYPES = 6
 OBS_NOTHING = 0
 OBS_AGENT_SELF = 1
@@ -33,6 +41,7 @@ OBS_AGENT_OTHER = 2
 OBS_AGENT_BOTH = 3
 OBS_PLANT = 4
 OBS_STAG = 5
+
 
 def env(render_mode=None):
     """
