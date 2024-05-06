@@ -14,16 +14,17 @@ UP = 2
 DOWN = 3
 STAY = 4
 MOVES = [LEFT, RIGHT, UP, DOWN, STAY]
-NUM_ITERS = 100
+NUM_ITERS = 10
 GRID_SIZE = (5, 5)
 NOTHING = 0
 AGENT = 1
 BOTH = 2
 PLANT = 3
 STAG = 4
-PLANT_REWARD = 1
+PLANT_REWARD = 2
 STAG_REWARD = 10
-STAG_PENALTY = 1
+STAG_PENALTY = 2
+STAG_MOVE_PROB = 0.8
 
 def env(render_mode=None):
     """
@@ -57,7 +58,7 @@ def raw_env(render_mode=None):
 class parallel_env(ParallelEnv):
     metadata = {"render_modes": ["human"], "name": "markov_stag_hunt"}
 
-    def __init__(self, render_mode=None, max_cycles=100):
+    def __init__(self, render_mode=None, max_cycles=10):
         """
         The init method takes in environment arguments and should define the following attributes:
         - possible_agents
@@ -170,16 +171,16 @@ class parallel_env(ParallelEnv):
                 closest_agent = a
         
         # stag moves with 75% probability towards closest agent
-        if np.random.rand() < 0.75 and closest_agent is not None:
+        if np.random.rand() < STAG_MOVE_PROB and closest_agent is not None:
             x,y = self.agent_positions[closest_agent]
             if stag_x < x:
-                return UP
-            elif stag_x > x:
                 return DOWN
+            elif stag_x > x:
+                return UP
             elif stag_y < y:
-                return LEFT
-            elif stag_y > y:
                 return RIGHT
+            elif stag_y > y:
+                return LEFT
         else:
             return np.random.choice(MOVES)
 
@@ -197,7 +198,7 @@ class parallel_env(ParallelEnv):
             stag_x = min(GRID_SIZE[0]-1, stag_x+1)
         
         # do not move if there is a plant or agent in the new position
-        if self.grid[stag_x][stag_y] == NOTHING:
+        if self.grid[stag_x][stag_y] != PLANT:
             self.grid[self.grid == STAG] = NOTHING
             self.grid[stag_x][stag_y] = STAG
 
@@ -226,41 +227,45 @@ class parallel_env(ParallelEnv):
                 rewards[a] += PLANT_REWARD
                 self.grid[self.agent_positions[a]] = NOTHING
 
-        # check if both agents are on stag
-        if all([old_grid[self.agent_positions[a]] == STAG for a in self.agents]):
-            for a in self.agents:
-                rewards[a] += STAG_REWARD
-                self.grid[self.agent_positions[a]] = NOTHING
+        # # check if both agents are on stag
+        # if all([old_grid[self.agent_positions[a]] == STAG for a in self.agents]):
+        #     for a in self.agents:
+        #         rewards[a] += STAG_REWARD
+        #         self.grid[self.agent_positions[a]] = NOTHING
 
         # check if agent is on stag alone
         for a in self.agents:
             if old_grid[self.agent_positions[a]] == STAG:
                 stag_alone = True
                 for a2 in self.agents:
-                    if a2 != a and self.grid[self.agent_positions[a2]] != STAG:
+                    if a2 != a and self.grid[self.agent_positions[a2]] == STAG:
                         stag_alone = False
                         break
                 if stag_alone:
                     rewards[a] -= STAG_PENALTY
-                    self.grid[self.agent_positions[a]] = NOTHING
+                else:
+                    rewards[a] += STAG_REWARD
+                self.grid[self.agent_positions[a]] = NOTHING
         
         for a in self.agents:
             old_x, old_y = old_positions[a]
             self.grid[old_x][old_y] = NOTHING
+        
+        # move stag
+        if np.sum(self.grid == STAG) > 0:
+            move = self.move_stag_towards_closest_agent()
+            self.move_stag(move)
 
         # update grid with agent positions
         for a in self.agents:
             x,y = self.agent_positions[a]
             self.grid[x][y] = BOTH if self.grid[x][y] == AGENT else AGENT
-            
 
         # regenerate plants and stag if they were eaten
         if np.sum(self.grid == PLANT) < 2 or np.sum(self.grid == STAG) < 1:
             self.generate_plants_and_stag()
 
-        # move stag
-        move = self.move_stag_towards_closest_agent()
-        self.move_stag(move)
+
 
         return rewards
 
