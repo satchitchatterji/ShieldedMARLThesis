@@ -65,7 +65,7 @@ def raw_env(render_mode=None):
 class parallel_env(ParallelEnv):
     metadata = {"render_modes": ["human"], "name": "markov_stag_hunt"}
 
-    def __init__(self, render_mode=None, max_cycles=10):
+    def __init__(self, render_mode=None, max_cycles=10, flatten_observation=True):
         """
         The init method takes in environment arguments and should define the following attributes:
         - possible_agents
@@ -85,6 +85,7 @@ class parallel_env(ParallelEnv):
         )
         self.render_mode = render_mode
         self.max_cycles = max_cycles
+        self.flatten_observation = flatten_observation
 
     # Observation space should be defined here.
     # lru_cache allows observation and action spaces to be memoized, reducing clock cycles required to get each agent's space.
@@ -92,6 +93,8 @@ class parallel_env(ParallelEnv):
     @functools.lru_cache(maxsize=None)
     def observation_space(self, agent):
         # gymnasium spaces are defined and documented here: https://gymnasium.farama.org/api/spaces/
+        if self.flatten_observation:
+            return Box(low=0, high=5, shape=(GRID_SIZE[0]*GRID_SIZE[1],1), dtype=int)
         return Box(low=0, high=5, shape=GRID_SIZE, dtype=int)
         # TODO: Currently designed for 2 agents. Need to update for more agents
         # TODO: to categorical?
@@ -305,12 +308,17 @@ class parallel_env(ParallelEnv):
         self.num_moves = 0
         self.plant_positions = []
         self.grid = self.generate_starting_grid()
-        observations = {agent: self.state_to_obs(self.grid, agent) for agent in self.agents}
+        observations = {agent: self.flatten_obs(self.state_to_obs(self.grid, agent)) for agent in self.agents}
         infos = {agent: {} for agent in self.agents}
         self.state = self.grid
         # self.symbols = {0:" ", 1:"🔴", 2:"🔵", 3:"🟢", 4:"⚪"}
         self.symbols = {0:" ", 1:"A", 2:"B", 3:"P", 4:"S"}
         return observations, infos
+
+    def flatten_obs(self, obs):
+        if not self.flatten_observation:
+            return obs
+        return obs.reshape(-1)
 
     def step(self, actions):
         """
@@ -335,7 +343,7 @@ class parallel_env(ParallelEnv):
         self.num_moves += 1
         env_truncation = self.num_moves >= self.max_cycles
         truncations = {agent: env_truncation for agent in self.agents}
-        observations = {agent: self.state_to_obs(self.grid, agent) for agent in self.agents}
+        observations = {agent: self.flatten_obs(self.state_to_obs(self.grid, agent)) for agent in self.agents}
         self.state = self.grid
 
         # typically there won't be any information in the infos, but there must
