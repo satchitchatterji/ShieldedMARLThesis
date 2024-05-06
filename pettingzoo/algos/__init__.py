@@ -9,7 +9,7 @@ from .mappo import MAPPO
 from .smappo import SMAPPO
 from .acsppo import ACSPPO
 from .sacsppo import SACSPPO
-
+from .base import BaseMARLAlgo
 
 classes = [
     "IQL",
@@ -21,5 +21,6 @@ classes = [
     "MAPPO",
     "SMAPPO",
     "ACSPPO",
-    "SACSPPO"
+    "SACSPPO",
+    "BaseMARLAlgo"
 ]

@@ -32,3 +32,7 @@ class BaseMARLAlgo:
             actions[agent] = self.action_wrapper(self.agents[agent].act(observations[agent]))
 
         return actions
+    
+    def update_rewards(self, rewards, terminations, truncations):
+        for agent in self.agents.keys():
+            self.agents[agent].update_reward(rewards[agent], terminations[agent] or truncations[agent])

@@ -2,9 +2,40 @@ import numpy as np
 import wandb
 import time
 from tqdm import trange
+from algos import BaseMARLAlgo
 
-def run_episode(env, agents, max_cycles, action_wrapper, ep):
+def run_episode_MARL_algorithm(env, algo, max_cycles, ep=0):
+    assert issubclass(type(algo), BaseMARLAlgo), "algo must be an instance of BaseMARLAlgo"
     
+    reward_hist = {}
+    observations, infos = env.reset()
+
+    for step in trange(max_cycles, desc=f"Episode {ep}"):
+
+        actions = algo.act(observations)
+        
+        observations, rewards, terminations, truncations, infos = env.step(actions)
+        
+        algo.update_rewards(rewards, terminations, truncations)
+
+        for agent in algo.agents.keys():
+            if agent not in reward_hist:
+                reward_hist[agent] = []
+            reward_hist[agent].append(rewards[agent])
+        
+    update_dict = {}
+    # mean reward per agent
+    update_dict.update({f"mean_reward_{agent}": np.mean(reward_hist[agent]) for agent in reward_hist})
+    # mean reward overall
+    update_dict.update({"mean_reward": np.mean([np.mean(reward_hist[agent]) for agent in reward_hist])})
+    wandb.log(update_dict)
+    return reward_hist
+
+def run_episode(env, agents, max_cycles, action_wrapper=None, ep=0):
+    
+    if issubclass(type(agents), BaseMARLAlgo):
+        return run_episode_MARL_algorithm(env, agents, max_cycles, ep)
+
     reward_hist = {}
     observations, infos = env.reset()
 
