@@ -2,8 +2,8 @@ import numpy as np
 
 # from pettingzoo.sisl import waterworld_v4
 
-from dqn_shielded import DQNShielded
-# from ppo_shielded import PPOShielded
+from algos.dqn_shielded import DQNShielded
+# from algos.ppo_shielded import PPOShielded
 import matplotlib.pyplot as plt
 from tqdm import trange
 
