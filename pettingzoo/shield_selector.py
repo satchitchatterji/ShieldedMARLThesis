@@ -3,7 +3,7 @@ import os
 class ShieldSelector:
     def __init__(self, env_name, n_actions=None, n_sensors=None, filename = ""):
         
-        self.base_dir = "."
+        self.base_dir = "shields"
         self.env_name = env_name
         self.n_actions = n_actions
         self.n_sensors = n_sensors
@@ -15,7 +15,7 @@ class ShieldSelector:
             self.file = filename
 
         else:
-            self.file = f"{env_name}_shield_a{n_actions}_s{n_sensors}.pl"
+            self.file = f"{env_name}/shield_a{n_actions}_s{n_sensors}.pl"
 
         self.verify()
 
