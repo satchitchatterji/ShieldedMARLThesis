@@ -2,8 +2,8 @@ import numpy as np
 
 # from pettingzoo.sisl import waterworld_v4
 
-from dqn_shielded import DQNShielded
-# from ppo_shielded import PPOShielded
+# from dqn_shielded import DQNShielded
+from ppo_shielded import PPOShielded
 import matplotlib.pyplot as plt
 from tqdm import trange
 
@@ -34,6 +34,7 @@ observation_space = env.observation_space(env.possible_agents[0]).shape[0]
 # print(n_discrete_actions, observation_space)
 # action_wrapper = WaterworldActionWrapper(n_discrete_actions, pursuer_max_accel, 1.0)
 action_wrapper = lambda x: x
+sensor_wrapper = lambda x: x
 # sensor_wrapper = WaterworldSensorWrapper(env, output_type="reduce_to_8")
 # shield_file = ShieldSelector(env_name="waterworld", 
 #                             n_actions=action_wrapper.n_actions, 
@@ -76,7 +77,7 @@ default_ppo_params = {
 # Instead, look at homogeneous vs heterogeneous shields
 
 agents = {}
-training_style = "IQL"
+training_style = "IPPO"
 
 ############################################ IDQL ############################################
 
