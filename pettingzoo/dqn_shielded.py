@@ -111,8 +111,8 @@ class DQNShielded(object):
 
         model = torch.nn.Sequential(
             torch.nn.Linear(input_len, 64),
-            # torch.nn.ReLU(),
-            # torch.nn.Linear(64, 128),
+            torch.nn.ReLU(),
+            torch.nn.Linear(64, 64),
             # torch.nn.ReLU(),
             # torch.nn.Linear(128, 64),
             torch.nn.ReLU(),
