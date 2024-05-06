@@ -26,6 +26,13 @@ STAG_REWARD = 10
 STAG_PENALTY = 2
 STAG_MOVE_PROB = 0.8
 
+OBS_NOTHING = 0
+OBS_AGENT_SELF = 1
+OBS_AGENT_OTHER = 2
+OBS_AGENT_BOTH = 3
+OBS_PLANT = 4
+OBS_STAG = 5
+
 def env(render_mode=None):
     """
     The env function often wraps the environment in wrappers by default.
@@ -85,8 +92,10 @@ class parallel_env(ParallelEnv):
     @functools.lru_cache(maxsize=None)
     def observation_space(self, agent):
         # gymnasium spaces are defined and documented here: https://gymnasium.farama.org/api/spaces/
-        return Box(low=0, high=4, shape=GRID_SIZE, dtype=int)
-        # 0: nothing, 1: agent, 2: both, 3: plant, 4: stag
+        return Box(low=0, high=5, shape=GRID_SIZE, dtype=int)
+        # TODO: Currently designed for 2 agents. Need to update for more agents
+        # TODO: to categorical?
+        # 0: nothing, 1: self, 2: other, 3: multiple including self, 4: plant, 5: stag
 
     # Action space should be defined here.
     # If your spaces change over time, remove this line (disable caching).
@@ -269,6 +278,20 @@ class parallel_env(ParallelEnv):
 
         return rewards
 
+    def state_to_obs(self, state, agent):
+        obs = state.copy()
+        for x in range(GRID_SIZE[0]):
+            for y in range(GRID_SIZE[1]):
+                if state[x][y] == AGENT:
+                    obs[x][y] = OBS_AGENT_SELF if (x,y) == self.agent_positions[agent] else OBS_AGENT_OTHER
+                elif state[x][y] == BOTH:
+                    obs[x][y] = OBS_AGENT_BOTH
+                elif state[x][y] == PLANT:
+                    obs[x][y] = OBS_PLANT
+                elif state[x][y] == STAG:
+                    obs[x][y] = OBS_STAG
+        return obs
+
     def reset(self, seed=None, options=None):
         # TODO: Implement a reset function
         """
@@ -282,9 +305,9 @@ class parallel_env(ParallelEnv):
         self.num_moves = 0
         self.plant_positions = []
         self.grid = self.generate_starting_grid()
-        observations = {agent: self.grid for agent in self.agents}
+        observations = {agent: self.state_to_obs(self.grid, agent) for agent in self.agents}
         infos = {agent: {} for agent in self.agents}
-        self.state = observations
+        self.state = self.grid
         # self.symbols = {0:" ", 1:"🔴", 2:"🔵", 3:"🟢", 4:"⚪"}
         self.symbols = {0:" ", 1:"A", 2:"B", 3:"P", 4:"S"}
         return observations, infos
@@ -312,8 +335,8 @@ class parallel_env(ParallelEnv):
         self.num_moves += 1
         env_truncation = self.num_moves >= self.max_cycles
         truncations = {agent: env_truncation for agent in self.agents}
-        observations = {agent: self.grid for agent in self.agents}
-        self.state = observations
+        observations = {agent: self.state_to_obs(self.grid, agent) for agent in self.agents}
+        self.state = self.grid
 
         # typically there won't be any information in the infos, but there must
         # still be an entry for each agent
