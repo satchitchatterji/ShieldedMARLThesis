@@ -40,6 +40,12 @@ def run_episode(env, agents, max_cycles, action_wrapper, ep):
 
             # print(terminations, truncations)
 
+    update_dict = {}
+    # mean reward per agent
+    update_dict.update({f"mean_reward_{agent}": np.mean(reward_hist[agent]) for agent in reward_hist})
+    # mean reward overall
+    update_dict.update({"mean_reward": np.mean([np.mean(reward_hist[agent]) for agent in reward_hist])})
+    wandb.log(update_dict)
     return reward_hist
 
 def eval_episode(env, agents, max_cycles, action_wrapper):
