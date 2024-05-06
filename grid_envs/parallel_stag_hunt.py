@@ -26,6 +26,7 @@ STAG_REWARD = 10
 STAG_PENALTY = 2
 STAG_MOVE_PROB = 0.8
 
+N_OBS_TYPES = 6
 OBS_NOTHING = 0
 OBS_AGENT_SELF = 1
 OBS_AGENT_OTHER = 2
@@ -65,7 +66,7 @@ def raw_env(render_mode=None):
 class parallel_env(ParallelEnv):
     metadata = {"render_modes": ["human"], "name": "markov_stag_hunt"}
 
-    def __init__(self, render_mode=None, max_cycles=10, flatten_observation=True):
+    def __init__(self, render_mode=None, max_cycles=10, flatten_observation=True, one_hot_observations=True):
         """
         The init method takes in environment arguments and should define the following attributes:
         - possible_agents
@@ -86,6 +87,7 @@ class parallel_env(ParallelEnv):
         self.render_mode = render_mode
         self.max_cycles = max_cycles
         self.flatten_observation = flatten_observation
+        self.one_hot_observations = one_hot_observations
 
     # Observation space should be defined here.
     # lru_cache allows observation and action spaces to be memoized, reducing clock cycles required to get each agent's space.
@@ -93,7 +95,11 @@ class parallel_env(ParallelEnv):
     @functools.lru_cache(maxsize=None)
     def observation_space(self, agent):
         # gymnasium spaces are defined and documented here: https://gymnasium.farama.org/api/spaces/
-        if self.flatten_observation:
+        if self.one_hot_observations and self.flatten_observation:
+            return Box(low=0, high=1, shape=(GRID_SIZE[0]*GRID_SIZE[1]*N_OBS_TYPES,1), dtype=int)
+        elif self.one_hot_observations:    
+            return Box(low=0, high=1, shape=(GRID_SIZE[0]*GRID_SIZE[1], N_OBS_TYPES), dtype=int)
+        elif self.flatten_observation:
             return Box(low=0, high=5, shape=(GRID_SIZE[0]*GRID_SIZE[1],1), dtype=int)
         return Box(low=0, high=5, shape=GRID_SIZE, dtype=int)
         # TODO: Currently designed for 2 agents. Need to update for more agents
@@ -295,6 +301,21 @@ class parallel_env(ParallelEnv):
                     obs[x][y] = OBS_STAG
         return obs
 
+    def obs_to_one_hot(self, obs):
+        one_hot_obs = np.zeros((GRID_SIZE[0], GRID_SIZE[1], N_OBS_TYPES))
+        for x in range(GRID_SIZE[0]):
+            for y in range(GRID_SIZE[1]):
+                one_hot_obs[x][y][obs[x][y]] = 1
+        return one_hot_obs
+
+    def process_obs(self, obs, agent):
+        obs = self.state_to_obs(obs, agent)
+        if self.one_hot_observations:
+            obs = self.obs_to_one_hot(obs)
+        if self.flatten_observation:
+            obs = obs.reshape(-1)
+        return obs
+
     def reset(self, seed=None, options=None):
         # TODO: Implement a reset function
         """
@@ -308,7 +329,7 @@ class parallel_env(ParallelEnv):
         self.num_moves = 0
         self.plant_positions = []
         self.grid = self.generate_starting_grid()
-        observations = {agent: self.flatten_obs(self.state_to_obs(self.grid, agent)) for agent in self.agents}
+        observations = {agent: self.process_obs(self.grid, agent) for agent in self.agents}
         infos = {agent: {} for agent in self.agents}
         self.state = self.grid
         # self.symbols = {0:" ", 1:"🔴", 2:"🔵", 3:"🟢", 4:"⚪"}
@@ -343,7 +364,7 @@ class parallel_env(ParallelEnv):
         self.num_moves += 1
         env_truncation = self.num_moves >= self.max_cycles
         truncations = {agent: env_truncation for agent in self.agents}
-        observations = {agent: self.flatten_obs(self.state_to_obs(self.grid, agent)) for agent in self.agents}
+        observations = {agent: self.process_obs(self.grid, agent) for agent in self.agents}
         self.state = self.grid
 
         # typically there won't be any information in the infos, but there must
