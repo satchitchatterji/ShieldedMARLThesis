@@ -1,27 +1,23 @@
-import numpy as np
+import os
+import sys
+import time
 
+import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import trange
-
-import os
-system = os.name
-
-import sys
-sys.path.append("../grid_envs")
-
-import parallel_stag_hunt
-
 import wandb
-import time
-cur_time = time.time()
 
 # from action_wrappers import WaterworldActionWrapper
 # from sensor_wrappers import WaterworldSensorWrapper
 from shield_selector import ShieldSelector
 
+sys.path.append("../grid_envs")
+import parallel_stag_hunt
 from algos import *
-
 from run_episode import run_episode, eval_episode
+
+system = os.name
+cur_time = time.time()
 
 max_cycles=100
 env = parallel_stag_hunt.parallel_env(render_mode=None, max_cycles=max_cycles)
@@ -85,7 +81,8 @@ algo = availible[training_style](env=env,
                                  alpha=alpha
                                  )
 
-agents = algo.agents
+# agents = algo.agents
+agents = algo
 
 # training episodes
 reward_hists = []
@@ -104,7 +101,7 @@ for r, reward_hist in enumerate(reward_hists):
 ############################################ EVALUATION ############################################
 
 # plot mean rewards per episode
-for agent in agents.keys():
+for agent in agents.agents.keys():
     plt.plot([np.sum(reward_hist[agent]) for reward_hist in reward_hists], label=agent)
 plt.legend()
 plt.show()
