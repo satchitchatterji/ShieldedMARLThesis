@@ -44,29 +44,33 @@ sensor_wrapper = lambda x: x
 sh_params = None
 alpha = 1.0
 default_ppo_params = {
-    "update_timestep": int(max_cycles/3),      # update policy every n timesteps # TODO: check this
+    "update_timestep": int(max_cycles/4),      # update policy every n timesteps # TODO: check this
     "K_epochs": 50,               # update policy for K epochs in one PPO update
     "eps_clip": 0.2,          # clip parameter for PPO
     "gamma": 0.99,            # discount factor
-    "lr_actor": 0.001,     # learning rate for actor network
-    "lr_critic": 0.001,       # learning rate for critic network
+    "lr_actor": 0.01,     # learning rate for actor network
+    "lr_critic": 0.01,       # learning rate for critic network
 }
 
+shielded_algos = {
+    "SIQL": SIQL, 
+    "SPSIQL": SPSIQL, 
+    "SIPPO": SIPPO, 
+    "SMAPPO": SMAPPO, 
+    "SACSPPO": SACSPPO
+}
 
-training_style = "ACSPPO"
+unshielded_algos = {
+    "IQL": IQL, 
+    "PSIQL": PSIQL, 
+    "IPPO": IPPO, 
+    "MAPPO": MAPPO, 
+    "ACSPPO": ACSPPO
+}
 
-availible = {
-            "IQL": IQL, 
-             "SIQL": SIQL, 
-             "PSIQL": PSIQL, 
-             "SPSIQL": SPSIQL, 
-             "IPPO": IPPO, 
-             "SIPPO": SIPPO, 
-             "MAPPO": MAPPO, 
-             "SMAPPO": SMAPPO, 
-             "ACSPPO": ACSPPO, 
-             "SACSPPO": SACSPPO
-             }
+availible = {**shielded_algos, **unshielded_algos}
+
+training_style = "MAPPO"
 
 if training_style not in availible:
     raise ValueError(f"Training style {training_style} not found. Available styles are {availible.keys()}")
@@ -81,32 +85,41 @@ algo = availible[training_style](env=env,
                                  alpha=alpha
                                  )
 
-# agents = algo.agents
-agents = algo
 
 # training episodes
 reward_hists = []
 wandb.init(project=f"{system}_stag_hunt", name=f"{training_style}_{cur_time}")
-for ep in range(10):
-    reward_hist = run_episode(env, agents, max_cycles, action_wrapper, ep)
+ep=0
+while True:
+    reward_hist = run_episode(env, algo, max_cycles, action_wrapper, ep)
     reward_hists.append(reward_hist)
+    ep+=1
 wandb.finish()
 env.close()
 
-for r, reward_hist in enumerate(reward_hists):
-    print(f"Episode {r} : ", end="")    
-    print({a:np.sum(reward_hist[a]) for a in reward_hist.keys()})
-    print("Total reward: ", np.sum([np.sum(reward_hist[a]) for a in reward_hist.keys()]))
+# for r, reward_hist in enumerate(reward_hists):
+#     print(f"Episode {r} : ", end="")    
+#     print({a:np.sum(reward_hist[a]) for a in reward_hist.keys()})
+#     print("Total reward: ", np.sum([np.sum(reward_hist[a]) for a in reward_hist.keys()]))
 
-############################################ EVALUATION ############################################
 
 # plot mean rewards per episode
-for agent in agents.agents.keys():
-    plt.plot([np.sum(reward_hist[agent]) for reward_hist in reward_hists], label=agent)
+agent_rewards = [[np.sum(reward_hist[agent]) for reward_hist in reward_hists] for agent in reward_hists[0].keys()]
+for a, agent in enumerate(algo.agents.keys()):
+    plt.plot(agent_rewards[a], label=agent)
+
+plt.plot([np.mean([np.sum(reward_hist[agent]) for agent in reward_hist.keys()]) for reward_hist in reward_hists], label="Mean Reward", color="black", linestyle="--")
+
+plt.xlabel("Episode")
+plt.ylabel("Mean Reward")
+plt.title(f"{training_style} on Stag Hunt")
+
 plt.legend()
 plt.show()
 
 exit()
+
+############################################ EVALUATION ############################################
 # set up environment
 env = parallel_stag_hunt.parallel_env(render_mode="human", max_cycles=max_cycles)
 observations, infos = env.reset()
