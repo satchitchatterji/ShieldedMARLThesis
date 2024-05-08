@@ -12,6 +12,8 @@ import wandb
 from shield_selector import ShieldSelector
 
 from pettingzoo.mpe import simple_spread_v3
+sys.path.append("../grid_envs")
+import parallel_stag_hunt
 
 from algos import *
 from run_episode import run_episode, eval_episode
@@ -31,7 +33,8 @@ cur_time = time.time()
 # set up environment
 max_training_episodes=10
 max_cycles=25
-env = simple_spread_v3.parallel_env(render_mode=None, N=3, local_ratio=0.5, max_cycles=max_cycles, continuous_actions=False)
+# env = simple_spread_v3.parallel_env(render_mode=None, N=3, local_ratio=0.5, max_cycles=max_cycles, continuous_actions=False)
+env = parallel_stag_hunt.parallel_env(render_mode=None, max_cycles=max_cycles)
 
 env_name = env.metadata["name"]
 eval_every = 5
