@@ -36,3 +36,7 @@ class BaseMARLAlgo:
     def update_rewards(self, rewards, terminations, truncations):
         for agent in self.agents.keys():
             self.agents[agent].update_reward(rewards[agent], terminations[agent] or truncations[agent])
+
+    def eval(self, bool_val):
+        for agent in self.agents.keys():
+            self.agents[agent].set_eval_mode(bool_val)

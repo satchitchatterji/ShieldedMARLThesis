@@ -28,12 +28,16 @@ parser.add_argument("--training_style",
 system = os.name
 cur_time = time.time()
 
-max_training_episodes=500
-max_cycles=100
+# set up environment
+max_training_episodes=10
+max_cycles=25
 env = simple_spread_v3.parallel_env(render_mode=None, N=3, local_ratio=0.5, max_cycles=max_cycles, continuous_actions=False)
-env_name = env.metadata["name"]
-env.reset()
 
+env_name = env.metadata["name"]
+eval_every = 5
+n_eval = 10
+
+env.reset()
 n_discrete_actions = env.action_space(env.possible_agents[0]).n
 observation_space = env.observation_space(env.possible_agents[0]).shape[0]
 
@@ -108,11 +112,20 @@ algo = availible[training_style](env=env,
 
 # training episodes
 reward_hists = []
+eval_hists = []
 wandb.init(project=f"{system}_{env_name}", name=f"{training_style}_{cur_time}")
 ep=0
 for _ in trange(max_training_episodes):
     reward_hist = run_episode(env, algo, max_cycles, action_wrapper, ep)
     reward_hists.append(reward_hist)
+
+    if ep % eval_every == 0 or ep == max_training_episodes-1:
+        eval_reward_hists = []
+        for _ in range(n_eval):
+            eval_reward_hist = eval_episode(env, algo, max_cycles, action_wrapper)
+            eval_reward_hists.append(eval_reward_hist)
+        eval_hists.append(eval_reward_hists)
+
     ep+=1
 wandb.finish()
 env.close()
@@ -132,13 +145,47 @@ plt.plot([np.mean([np.mean(reward_hist[agent]) for agent in reward_hist.keys()])
 
 plt.xlabel("Episode")
 plt.ylabel("Mean Reward")
-plt.title(f"{training_style} on {env_name}")
+plt.title(f"{training_style} on {env_name} (training)")
 
 plt.legend()
 if not os.path.exists(f"plots/{env_name}"):
     os.makedirs(f"plots/{env_name}")
-plt.savefig(f"plots/{env_name}/{training_style}_{cur_time}.png")
-plt.show()
+plt.grid(True)
+plt.savefig(f"plots/{env_name}/{training_style}_{cur_time}_train.png")
+# plt.show()
+plt.clf()
+# compute eval means and stds
+eval_means = {}
+eval_stds = {}
+
+for a, agent in enumerate(algo.agents.keys()):
+    eval_means[agent] = []
+    eval_stds[agent] = []
+    for eval_hist in eval_hists:
+        eval_means[agent].append(np.mean([np.mean(eval_reward_hist[agent]) for eval_reward_hist in eval_hist]))
+        eval_stds[agent].append(np.std([np.mean(eval_reward_hist[agent]) for eval_reward_hist in eval_hist]))
+
+# compute overall mean and std
+eval_means["mean"] = []
+eval_stds["mean"] = []
+for eval_hist in eval_hists:
+    eval_means["mean"].append(np.mean([np.mean([np.mean(eval_reward_hist[agent]) for agent in eval_reward_hist.keys()]) for eval_reward_hist in eval_hist]))
+    eval_stds["mean"].append(np.std([np.mean([np.mean(eval_reward_hist[agent]) for agent in eval_reward_hist.keys()]) for eval_reward_hist in eval_hist]))
+
+# plot eval info
+for a, agent in enumerate(algo.agents.keys()):
+    plt.errorbar(range(0, max_training_episodes+1, eval_every), eval_means[agent], yerr=eval_stds[agent], label=f"{agent} mean")
+
+plt.errorbar(range(0, max_training_episodes+1, eval_every), eval_means["mean"], yerr=eval_stds["mean"], label="mean", color="black", linestyle="--")
+
+plt.xlabel("Episode")
+plt.ylabel("Mean Reward")
+plt.title(f"{training_style} on {env_name} (evaluation)")
+plt.grid(True)
+plt.legend()
+plt.savefig(f"plots/{env_name}/{training_style}_{cur_time}_eval.png")
+
+# plt.show()
 
 exit()
 

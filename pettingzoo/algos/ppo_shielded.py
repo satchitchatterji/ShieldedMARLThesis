@@ -295,6 +295,7 @@ class PPOShielded:
         self.alpha = alpha
         self.policy_safety_calculater = Shield(**policy_safety_params)
         self.time_step = 0
+        self.eval_mode = False
 
     def set_policy(self, policy):
         del self.policy
@@ -375,10 +376,12 @@ class PPOShielded:
                 state = torch.FloatTensor(state).to(device)
                 action, action_logprob, state_val = self.policy_old.act(state)
             
-            self.buffer.states.append(state)
-            self.buffer.actions.append(action)
-            self.buffer.logprobs.append(action_logprob)
-            self.buffer.state_values.append(state_val)
+            if not self.eval_mode:
+
+                self.buffer.states.append(state)
+                self.buffer.actions.append(action)
+                self.buffer.logprobs.append(action_logprob)
+                self.buffer.state_values.append(state_val)
 
             return action.item()
 
@@ -476,6 +479,7 @@ class PPOShielded:
 
     def set_eval_mode(self, bool_val):
         """ Set the agent to evaluation mode """
+        self.eval_mode = bool_val
         if bool_val:
             self.policy.eval()
             self.policy_old.eval()
