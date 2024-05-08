@@ -30,7 +30,7 @@ STAG = 4
 
 # rewards
 PLANT_REWARD = 2
-STAG_REWARD = 10
+STAG_REWARD = 100
 STAG_PENALTY = 2
 
 # observation types for agents
@@ -265,7 +265,7 @@ class parallel_env(ParallelEnv):
             if old_grid[self.agent_positions[a]] == STAG:
                 stag_alone = True
                 for a2 in self.agents:
-                    if a2 != a and self.grid[self.agent_positions[a2]] == STAG:
+                    if a2 != a and old_grid[self.agent_positions[a2]] == STAG:
                         stag_alone = False
                         break
                 if stag_alone:
