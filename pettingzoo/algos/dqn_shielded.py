@@ -42,18 +42,17 @@ class DQNShielded(object):
         if func_approx is not None:
             self.func_approx = func_approx.to(self.device)
 
-
         # Hyperparameters
-        self.epsilon = 0.1
+        self.epsilon = 1.0
         self.epsilon_decay = 0.999
         self.epsilon_min = 0.1
 
         self.gamma = 0.999
         self.learning_rate = 0.01
 
-        self.max_history = 10000
-        self.batch_size = 256
-        self.epochs = 1
+        self.max_history = 1000
+        self.batch_size = 128
+        self.epochs = 4
 
         # memory and bookkeeping
         self.history = []
@@ -86,7 +85,7 @@ class DQNShielded(object):
 
         self.debug_info_history = []
         self.loss_info = []
-        self.save_debug_info = True
+        self.save_debug_info = False
 
         self._setup()
 
@@ -140,7 +139,7 @@ class DQNShielded(object):
             or choose another random one with probability epsilon """
         n_actions = len(Q_values)
 
-        if random.random() < self.epsilon:
+        if random.random() < self.epsilon and not self.eval_mode:
             return np.random.choice(range(n_actions))
         else:
             return np.argmax(Q_values.detach().cpu().numpy())
@@ -340,6 +339,11 @@ class DQNShielded(object):
             with open(filename + "_debug_info.txt", 'w') as f:
                 f.write(str(self.debug_info_history))
 
+    def set_eval_mode(self, bool_val):
+        """ Set the agent to evaluation mode """
+        self.eval_mode = bool_val
+        self.training = not bool_val
+
     def load_model(self, filename=None, exploit=False):
         """ Load model for training or optional exploitative deployment """
         if filename is None:
@@ -351,6 +355,7 @@ class DQNShielded(object):
             self.epsilon = 0
             self.epsilon_min = 0
             self.training = False
+            self.eval_mode = True
 
     def begin_episode(self):
         self.prev_states = None

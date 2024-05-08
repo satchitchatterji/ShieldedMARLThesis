@@ -474,3 +474,11 @@ class PPOShielded:
     def reset(self):
         pass
 
+    def set_eval_mode(self, bool_val):
+        """ Set the agent to evaluation mode """
+        if bool_val:
+            self.policy.eval()
+            self.policy_old.eval()
+        else:
+            self.policy.train()
+            self.policy_old.train()
