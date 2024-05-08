@@ -4,5 +4,4 @@ src
 *.png
 
 *__pycache__
-*.pyc
-*.pyo
+*.py[cod]
