@@ -6,11 +6,13 @@ from algos import BaseMARLAlgo
 
 def run_episode_MARL_algorithm(env, algo, max_cycles, ep=0):
     assert issubclass(type(algo), BaseMARLAlgo), "algo must be an instance of BaseMARLAlgo"
-    
     reward_hist = {}
     observations, infos = env.reset()
 
     for step in trange(max_cycles, desc=f"Episode {ep}"):
+
+        if len(env.agents) == 0:
+            break
 
         actions = algo.act(observations)
         
