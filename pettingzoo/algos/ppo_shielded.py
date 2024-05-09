@@ -43,39 +43,20 @@ class ActorCriticShielded(nn.Module):
     def __init__(self, 
                  state_dim, 
                  action_dim, 
-                 has_continuous_action_space, 
-                 action_std_init,
                  shield_params=None,
                  get_sensor_value_ground_truth=None,
                  shield=None
                  ):
         super(ActorCriticShielded, self).__init__()
 
-        self.has_continuous_action_space = has_continuous_action_space
-        
-        if has_continuous_action_space:
-            self.action_dim = action_dim
-            self.action_var = torch.full((action_dim,), action_std_init * action_std_init).to(device)
-        # actor
-        if has_continuous_action_space :
-            raise NotImplementedError("Only discrete action spaces are supported for now.")
-            self.actor = nn.Sequential(
-                            nn.Linear(state_dim, 64),
-                            nn.Tanh(),
-                            nn.Linear(64, 64),
-                            nn.Tanh(),
-                            nn.Linear(64, action_dim),
-                            nn.Tanh()
-                        )
-        else:
-            self.actor = nn.Sequential(
-                            nn.Linear(state_dim, 64),
-                            nn.Tanh(),
-                            nn.Linear(64, 64),
-                            nn.Tanh(),
-                            nn.Linear(64, action_dim),
-                            nn.Softmax(dim=-1)
-                        )
+        self.actor = nn.Sequential(
+                        nn.Linear(state_dim, 64),
+                        nn.Tanh(),
+                        nn.Linear(64, 64),
+                        nn.Tanh(),
+                        nn.Linear(64, action_dim),
+                        nn.Softmax(dim=-1)
+                    )
         # critic
         self.critic = nn.Sequential(
                         nn.Linear(state_dim, 64),
@@ -99,14 +80,6 @@ class ActorCriticShielded(nn.Module):
         elif shield_params is None and shield is None:
             self.shield = None
         
-    def set_action_std(self, new_action_std):
-        if self.has_continuous_action_space:
-            self.action_var = torch.full((self.action_dim,), new_action_std * new_action_std).to(device)
-        else:
-            print("--------------------------------------------------------------------------------------------")
-            print("WARNING : Calling ActorCritic::set_action_std() on discrete action space policy")
-            print("--------------------------------------------------------------------------------------------")
-
     def forward(self):
         raise NotImplementedError
     
@@ -128,14 +101,8 @@ class ActorCriticShielded(nn.Module):
 
     def act(self, state, deterministic=False):
 
-        if self.has_continuous_action_space:
-            raise NotImplementedError("Only discrete action spaces are supported for now.")
-            action_mean = self.actor(state)
-            cov_mat = torch.diag(self.action_var).unsqueeze(dim=0)
-            distribution = MultivariateNormal(action_mean, cov_mat)
-        else:
-            base_actions = self.actor(state)    # base_actions
-            distribution = Categorical(base_actions)    # distribution
+        base_actions = self.actor(state)    # base_actions
+        distribution = Categorical(base_actions)    # distribution
 
         if self.shield is None:
             sensor_values = self.get_sensor_value_ground_truth(state)
@@ -187,22 +154,10 @@ class ActorCriticShielded(nn.Module):
     
     def evaluate(self, state, action):
 
-        if self.has_continuous_action_space:
-            raise NotImplementedError("Only discrete action spaces are supported for now.")
-            action_mean = self.actor(state)
-            
-            action_var = self.action_var.expand_as(action_mean)
-            cov_mat = torch.diag_embed(action_var).to(device)
-            dist = MultivariateNormal(action_mean, cov_mat)
-            
-            # For Single Action Environments.
-            if self.action_dim == 1:
-                action = action.reshape(-1, self.action_dim)
-        else:
-            action_probs = self.actor(state)
-            distribution = Categorical(action_probs)
-            # base_actions = self.get_actions(distribution, deterministic=False)
-            base_actions = action_probs
+        action_probs = self.actor(state)
+        distribution = Categorical(action_probs)
+        # base_actions = self.get_actions(distribution, deterministic=False)
+        base_actions = action_probs
 
         dist_entropy = None
         if self.shield is None or not self.shield.differentiable:
@@ -220,20 +175,6 @@ class ActorCriticShielded(nn.Module):
             dist_entropy = shielded_policy.entropy()
             self.info = {"sensor_value": sensor_values, "base_policy": base_actions}
             
-        # elif self.shield.differentiable:  # PLPG
-        #     # compute the shielded policy
-        #     actions = self.get_shielded_policy_batch_agnostic(base_actions, sensor_values)
-        #     shielded_policy = Categorical(probs=actions)
-
-        #     # get the most probable action of the shielded policy if we want to use a deterministic policy,
-        #     # otherwuse, sample an action
-        #     if deterministic:
-        #         actions = torch.argmax(shielded_policy.probs, dim=1)
-        #     else:
-        #         actions = shielded_policy.sample()
-
-        #     log_prob = shielded_policy.log_prob(actions)
-
         else:  # VSRL
             sensor_values = self.shield.get_sensor_values(state)
             log_prob = distribution.log_prob(action)
@@ -254,17 +195,10 @@ class PPOShielded:
                  K_epochs, 
                  eps_clip,
                  update_timestep,
-                 has_continuous_action_space=False, 
-                 action_std_init=0.6,
                  alpha=0,
                  policy_safety_params={},
                  policy_kw_args={}
                  ):
-
-        self.has_continuous_action_space = has_continuous_action_space
-
-        if has_continuous_action_space:
-            self.action_std = action_std_init
 
         self.gamma = gamma
         self.eps_clip = eps_clip
@@ -277,15 +211,14 @@ class PPOShielded:
         self.policy_kw_args = policy_kw_args
         self.state_dim = state_dim
         self.action_dim = action_dim
-        self.has_continuous_action_space = has_continuous_action_space
-        self.action_std_init = action_std_init
-        self.policy = ActorCriticShielded(state_dim, action_dim, has_continuous_action_space, action_std_init, **policy_kw_args).to(device)
+
+        self.policy = ActorCriticShielded(state_dim, action_dim, **policy_kw_args).to(device)
         self.optimizer = torch.optim.Adam([
                         {'params': self.policy.actor.parameters(), 'lr': lr_actor},
                         {'params': self.policy.critic.parameters(), 'lr': lr_critic}
                     ])
 
-        self.policy_old = ActorCriticShielded(state_dim, action_dim, has_continuous_action_space, action_std_init, **policy_kw_args).to(device)
+        self.policy_old = ActorCriticShielded(state_dim, action_dim, **policy_kw_args).to(device)
         self.policy_old.load_state_dict(self.policy.state_dict())
         
         self.update_timestep = update_timestep
@@ -307,7 +240,7 @@ class PPOShielded:
                 {'params': self.policy.actor.parameters(), 'lr': self.lr_actor},
                 {'params': self.policy.critic.parameters(), 'lr': self.lr_critic}
             ])
-        self.policy_old = ActorCriticShielded(self.state_dim, self.action_dim, self.has_continuous_action_space, self.action_std_init, **self.policy_kw_args).to(device)
+        self.policy_old = ActorCriticShielded(self.state_dim, self.action_dim, **self.policy_kw_args).to(device)
         self.policy_old.load_state_dict(self.policy.state_dict())
 
     def set_policy_critic(self, critic):
@@ -318,7 +251,7 @@ class PPOShielded:
                 {'params': self.policy.actor.parameters(), 'lr': self.lr_actor},
                 {'params': self.policy.critic.parameters(), 'lr': self.lr_critic}
             ])
-        self.policy_old = ActorCriticShielded(self.state_dim, self.action_dim, self.has_continuous_action_space, self.action_std_init, **self.policy_kw_args).to(device)
+        self.policy_old = ActorCriticShielded(self.state_dim, self.action_dim, **self.policy_kw_args).to(device)
         self.policy_old.load_state_dict(self.policy.state_dict())
 
     def set_policy_actor(self, actor):
@@ -329,65 +262,24 @@ class PPOShielded:
                 {'params': self.policy.actor.parameters(), 'lr': self.lr_actor},
                 {'params': self.policy.critic.parameters(), 'lr': self.lr_critic}
             ])
-        self.policy_old = ActorCriticShielded(self.state_dim, self.action_dim, self.has_continuous_action_space, self.action_std_init, **self.policy_kw_args).to(device)
+        self.policy_old = ActorCriticShielded(self.state_dim, self.action_dim, **self.policy_kw_args).to(device)
         self.policy_old.load_state_dict(self.policy.state_dict())
 
-    def set_action_std(self, new_action_std):
-        if self.has_continuous_action_space:
-            self.action_std = new_action_std
-            self.policy.set_action_std(new_action_std)
-            self.policy_old.set_action_std(new_action_std)
-        else:
-            print("--------------------------------------------------------------------------------------------")
-            print("WARNING : Calling PPO::set_action_std() on discrete action space policy")
-            print("--------------------------------------------------------------------------------------------")
-
-    def decay_action_std(self, action_std_decay_rate, min_action_std):
-        print("--------------------------------------------------------------------------------------------")
-        if self.has_continuous_action_space:
-            self.action_std = self.action_std - action_std_decay_rate
-            self.action_std = round(self.action_std, 4)
-            if (self.action_std <= min_action_std):
-                self.action_std = min_action_std
-                print("setting actor output action_std to min_action_std : ", self.action_std)
-            else:
-                print("setting actor output action_std to : ", self.action_std)
-            self.set_action_std(self.action_std)
-
-        else:
-            print("WARNING : Calling PPO::decay_action_std() on discrete action space policy")
-        print("--------------------------------------------------------------------------------------------")
-
     def select_action(self, state):
-
-        if self.has_continuous_action_space:
-            with torch.no_grad():
-                state = torch.FloatTensor(state).to(device)
-                action, action_logprob, state_val = self.policy_old.act(state)
-
+        with torch.no_grad():
+            state = torch.FloatTensor(state).to(device)
+            action, action_logprob, state_val = self.policy_old.act(state)
+        
+        if not self.eval_mode:
             self.buffer.states.append(state)
             self.buffer.actions.append(action)
             self.buffer.logprobs.append(action_logprob)
             self.buffer.state_values.append(state_val)
 
-            return action.detach().cpu().numpy().flatten()
-        else:
-            with torch.no_grad():
-                state = torch.FloatTensor(state).to(device)
-                action, action_logprob, state_val = self.policy_old.act(state)
-            
-            if not self.eval_mode:
-
-                self.buffer.states.append(state)
-                self.buffer.actions.append(action)
-                self.buffer.logprobs.append(action_logprob)
-                self.buffer.state_values.append(state_val)
-
-            return action.item()
+        return action.item()
 
     def update(self):
         # Monte Carlo estimate of returns
-
         rewards = []
         discounted_reward = 0
         for reward, is_terminal in zip(reversed(self.buffer.rewards), reversed(self.buffer.is_terminals)):
