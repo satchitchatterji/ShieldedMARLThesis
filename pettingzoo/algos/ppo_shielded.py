@@ -192,17 +192,18 @@ class PPOShielded:
                  lr_actor, 
                  lr_critic, 
                  gamma, 
-                 K_epochs, 
+                 train_epochs, 
                  eps_clip,
                  update_timestep,
                  alpha=0,
                  policy_safety_params={},
-                 policy_kw_args={}
+                 policy_kw_args={},
+                 **kwargs # made to be comptible with DQN
                  ):
 
         self.gamma = gamma
         self.eps_clip = eps_clip
-        self.K_epochs = K_epochs
+        self.train_epochs = train_epochs
         
         self.buffer = RolloutBuffer()
 
@@ -303,7 +304,7 @@ class PPOShielded:
 
         safety_losses = []
         # Optimize policy for K epochs
-        for _ in range(self.K_epochs):
+        for _ in range(self.train_epochs):
 
             # Evaluating old actions and values
             logprobs, state_values, dist_entropy = self.policy.evaluate(old_states, old_actions)

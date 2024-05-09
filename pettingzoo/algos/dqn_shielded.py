@@ -18,7 +18,24 @@ ACTION_DIST = 5
 class DQNShielded(object):
     """ Agent that uses the SARSA update rule to learn Q(s,a) estimates,
         using an MLP as a function approximator. """
-    def __init__(self, num_states, num_actions, func_approx=None, shield_params=None, shield=None, alpha=1.0):
+    def __init__(self, 
+                 num_states, 
+                 num_actions,
+                 func_approx=None, 
+                 shield_params=None, 
+                 shield=None, 
+                 alpha=1.0,
+                 train_epochs=50,
+                 gamma=0.999,
+                 lr=0.01,
+                 batch_size=128,
+                 buffer_size=10000,
+                 eps_min=0.1,
+                 eps_decay=0.999,
+                 update_timestep=25,
+                 tau=0.01,
+                 **kwargs # made to be compatible with PPO
+                 ):
 
         self.observation_type = 'discrete'
         self.action_type = 'discrete'
@@ -44,15 +61,15 @@ class DQNShielded(object):
 
         # Hyperparameters
         self.epsilon = 1.0
-        self.epsilon_decay = 0.999
-        self.epsilon_min = 0.1
+        self.epsilon_decay = eps_decay
+        self.epsilon_min = eps_min
 
-        self.gamma = 0.999
-        self.learning_rate = 0.01
+        self.gamma = gamma
+        self.learning_rate = lr
 
-        self.max_history = 1000
-        self.batch_size = 128
-        self.epochs = 4
+        self.max_history = buffer_size
+        self.batch_size = batch_size
+        self.epochs = train_epochs
 
         # memory and bookkeeping
         self.history = []

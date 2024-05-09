@@ -15,7 +15,6 @@ from shield_selector import ShieldSelector
 from algos import *
 from env_selection import ALL_ENVS, ALL_ENVS_ARGS
 from config import config
-from config_ppo import config_ppo
 
 from run_episode import run_episode, eval_episode
 
@@ -64,11 +63,14 @@ sensor_wrapper = lambda x: x
 #     "get_sensor_value_ground_truth": sensor_wrapper,
 # }
 
-alpha = config.shield_alpha
 sh_params = None
-default_ppo_params = vars(config_ppo)
-print(default_ppo_params)
-exit()
+ppo_params = ["update_timestep", "train_epochs", "gamma", "eps_clip", "lr_actor", "lr_critic"]
+dqn_params = ["update_timestep", "train_epochs", "gamma", "buffer_size", "batch_size", "lr", "eps_decay", "eps_min", "tau"]
+extracted_ppo = {k: v for k, v in vars(config).items() if k in ppo_params}
+extracted_dqn = {k: v for k, v in vars(config).items() if k in dqn_params}
+all_algo_params = {k: v for k, v in vars(config).items() if k in ppo_params or k in dqn_params}
+alpha = config.shield_alpha
+
 
 ############################################ ALGO SELECTION ############################################
 
@@ -83,18 +85,17 @@ algo = ALL_ALGORITHMS[algo_name](env=env,
                                  action_wrapper=action_wrapper,
                                  sensor_wrapper=sensor_wrapper,
                                  sh_params=sh_params,
-                                 algorithm_params=default_ppo_params,
+                                 algorithm_params=all_algo_params,
                                  alpha=alpha
                                  )
-
 
 ############################################ TRAINING ############################################
 
 reward_hists = []
 eval_hists = []
-wandb.init(project=f"{system}_{env_name}", name=f"{algo_name}_{cur_time}")
+wandb.init(project=f"{system}_{env_name}", name=f"{algo_name}_{cur_time}", config=vars(config))
 ep=0
-for _ in trange(max_training_episodes):
+for _ in range(max_training_episodes):
     reward_hist = run_episode(env, algo, max_cycles, ep)
     reward_hists.append(reward_hist)
 
@@ -167,6 +168,7 @@ for eval_hist in eval_hists:
 
 # plot eval info
 for a, agent in enumerate(algo.agents.keys()):
+    # TODO: Breaks when max_training_episodes is not divisible by eval_every
     plt.errorbar(range(0, max_training_episodes+1, eval_every), eval_means[agent], yerr=eval_stds[agent], label=f"{agent} mean")
 
 plt.errorbar(range(0, max_training_episodes+1, eval_every), eval_means["mean"], yerr=eval_stds["mean"], label="mean", color="black", linestyle="--")
@@ -193,7 +195,7 @@ algo = ALL_ALGORITHMS[algo_name](env=env,
                                  action_wrapper=action_wrapper,
                                  sensor_wrapper=sensor_wrapper,
                                  sh_params=sh_params,
-                                 algorithm_params=default_ppo_params,
+                                 algorithm_params=all_algo_params,
                                  alpha=alpha
                                  )
 algo.load(f"models/{env_name}/{algo_name}_{cur_time}/ep{max_training_episodes-1}")
