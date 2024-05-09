@@ -15,6 +15,7 @@ from shield_selector import ShieldSelector
 from algos import *
 from env_selection import ALL_ENVS, ALL_ENVS_ARGS
 from config import config
+from config_ppo import config_ppo
 
 from run_episode import run_episode, eval_episode
 
@@ -26,6 +27,7 @@ max_training_episodes = config.max_eps
 max_cycles = config.max_cycles
 
 total_cycles = max_training_episodes * max_cycles
+print(f"Training for {max_training_episodes} episodes of {max_cycles} cycles each, totalling {total_cycles} cycles.")
 
 env_creator_func = ALL_ENVS[config.env]
 env_creator_args = ALL_ENVS_ARGS[config.env]
@@ -41,9 +43,9 @@ env.reset()
 
 n_discrete_actions = env.action_space(env.possible_agents[0]).n
 if hasattr(env.observation_space(env.possible_agents[0]), "shape") and len(env.observation_space(env.possible_agents[0]).shape) > 0: 
-    observation_space = env.observation_space(env.possible_agents[0]).shape[0]  # for box spaces
+    observation_space = env.observation_space(env.possible_agents[0]).shape[0]  # for box spaces with shape
 else: 
-    observation_space = env.observation_space(env.possible_agents[0]).n         # for discrete spaces
+    observation_space = env.observation_space(env.possible_agents[0]).n         # for discrete spaces?
 
 # action_wrapper = WaterworldActionWrapper(n_discrete_actions, pursuer_max_accel, 1.0)
 action_wrapper = lambda x: x
@@ -64,14 +66,9 @@ sensor_wrapper = lambda x: x
 
 alpha = config.shield_alpha
 sh_params = None
-default_ppo_params = {
-    "update_timestep": int(max_cycles/4),      # update policy every n timesteps # TODO: check this
-    "K_epochs": 50,               # update policy for K epochs in one PPO update
-    "eps_clip": 0.2,          # clip parameter for PPO
-    "gamma": 0.99,            # discount factor
-    "lr_actor": 0.001,     # learning rate for actor network
-    "lr_critic": 0.001,       # learning rate for critic network
-}
+default_ppo_params = vars(config_ppo)
+print(default_ppo_params)
+exit()
 
 ############################################ ALGO SELECTION ############################################
 
