@@ -21,7 +21,7 @@ parser.add_argument("--env",
 parser.add_argument("--max_cycles",
                     type=int,
                     default=100,
-                    help="Number of cycles to run the environment for."
+                    help="Number of cycles to run each environment episode for."
                     )
 
 parser.add_argument("--max_eps",
@@ -58,7 +58,7 @@ parser.add_argument("--update_timestep",
 parser.add_argument("--train_epochs",                                     
                     type=int,
                     default=50,
-                    help="Update policy for K epochs in one PPO/DQN update."
+                    help="Train policy/Q network for K epochs in one PPO/DQN update."
                     )
 
 
@@ -72,57 +72,57 @@ parser.add_argument("--gamma",
 parser.add_argument("--eps_clip",
                     type=float,
                     default=0.2,
-                    help="Clip parameter for PPO."
+                    help="(PPO) Clip parameter for PPO."
                     )
 
 
 parser.add_argument("--lr_actor",
                     type=float,
                     default=0.001,
-                    help="Learning rate for actor network."
+                    help="(PPO) Learning rate for actor network."
                     )
 
 parser.add_argument("--lr_critic",
                     type=float,
                     default=0.001,
-                    help="Learning rate for critic network."
+                    help="(PPO) Learning rate for critic network."
                     )
 
 # DQN Params
 parser.add_argument("--buffer_size",
                     type=int,
                     default=10000,
-                    help="Size of the replay buffer."
+                    help="(DQN) Size of the replay buffer."
                     )
 
 parser.add_argument("--batch_size",
                     type=int,
                     default=64,
-                    help="Batch size for training."
+                    help="(DQN) Batch size for training."
                     )
 
 parser.add_argument("--lr",
                     type=float,
                     default=0.001,
-                    help="Learning rate for the Q network."
+                    help="(DQN) Learning rate for the Q network."
                     )
 
 parser.add_argument("--tau",
                     type=float,
                     default=0.001,
-                    help="Soft update parameter."
+                    help="(DQN) Soft update parameter."
                     )
 
 parser.add_argument("--eps_min",
                     type=float,
                     default=0.1,
-                    help="Min epsilon for epsilon greedy policy."
+                    help="(DQN) Min epsilon for epsilon greedy policy."
                     )
 
 parser.add_argument("--eps_decay",
                     type=float,
                     default=0.995,
-                    help="Decay rate for epsilon."
+                    help="(DQN) Decay rate for epsilon."
                     )
 
 
