@@ -16,6 +16,10 @@ from pettingzoo.mpe import simple_spread_v3
 sys.path.append("../grid_envs")
 import parallel_stag_hunt
 
+sys.path.append("../pettingzoo_dilemma_envs")
+from dilemma_pettingzoo import parallel_env as dilemma_parallel_env
+
+
 from algos import *
 
 from run_episode import run_episode, eval_episode
@@ -33,15 +37,16 @@ system = os.name
 cur_time = time.time()
 
 # set up environment
-max_training_episodes=10
+max_training_episodes=100
 max_cycles=25
 
 total_cycles = max_training_episodes * max_cycles
-print(f"Total cycles: {total_cycles}")
 
-env_creator_func = simple_spread_v3.parallel_env
+# env_creator_func = simple_spread_v3.parallel_env
+env_creator_func = dilemma_parallel_env
+env_creator_args = {"game": "stag", "num_actions": 2, "max_cycles": max_cycles}
 # env_creator_args = {"max_cycles": max_cycles}
-env_creator_args = {"N": 3, "local_ratio": 0.5, "max_cycles": max_cycles, "continuous_actions": False}
+# env_creator_args = {"N": 3, "local_ratio": 0.5, "max_cycles": max_cycles, "continuous_actions": False}
 # env = simple_spread_v3.parallel_env(render_mode=None, N=3, local_ratio=0.5, max_cycles=max_cycles, continuous_actions=False)
 env = env_creator_func(render_mode=None, **env_creator_args)
 
@@ -49,9 +54,10 @@ env_name = env.metadata["name"]
 eval_every = 5
 n_eval = 10
 
-env.reset()
+print(env.reset())
+
 n_discrete_actions = env.action_space(env.possible_agents[0]).n
-observation_space = env.observation_space(env.possible_agents[0]).shape[0]
+observation_space = env.observation_space(env.possible_agents[0]).shape[0] if type(env.observation_space(env.possible_agents[0])) == np.ndarray else env.observation_space(env.possible_agents[0]).n
 
 # action_wrapper = WaterworldActionWrapper(n_discrete_actions, pursuer_max_accel, 1.0)
 action_wrapper = lambda x: x
