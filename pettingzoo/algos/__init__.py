@@ -24,3 +24,22 @@ classes = [
     "SACSPPO",
     "BaseMARLAlgo"
 ]
+
+
+SHIELDED_ALGOS = {
+    "SIQL": SIQL, 
+    "SPSIQL": SPSIQL, 
+    "SIPPO": SIPPO, 
+    "SMAPPO": SMAPPO, 
+    "SACSPPO": SACSPPO
+}
+
+UNSHIELDED_ALGOS = {
+    "IQL": IQL, 
+    "PSIQL": PSIQL, 
+    "IPPO": IPPO, 
+    "MAPPO": MAPPO, 
+    "ACSPPO": ACSPPO
+}
+
+ALL_ALGORITHMS = {**UNSHIELDED_ALGOS, **SHIELDED_ALGOS}

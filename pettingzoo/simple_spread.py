@@ -16,15 +16,16 @@ sys.path.append("../grid_envs")
 import parallel_stag_hunt
 
 from algos import *
+
 from run_episode import run_episode, eval_episode
 
 # accept cmd line args
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument("--training_style", 
+parser.add_argument("--algo", 
                     type=str, 
                     default="IQL", 
-                    help="Training style to use. Options are IQL, PSIQL, IPPO, MAPPO, ACSPPO, SIQL, SPSIQL, SIPPO, SMAPPO, SACSPPO"
+                    help=f"Training style to use. Options are {ALL_ALGORITHMS.keys()}"
                     )
 
 system = os.name
@@ -75,30 +76,12 @@ default_ppo_params = {
     "lr_critic": 0.001,       # learning rate for critic network
 }
 
-shielded_algos = {
-    "SIQL": SIQL, 
-    "SPSIQL": SPSIQL, 
-    "SIPPO": SIPPO, 
-    "SMAPPO": SMAPPO, 
-    "SACSPPO": SACSPPO
-}
+algo_name = parser.parse_args().algo
 
-unshielded_algos = {
-    "IQL": IQL, 
-    "PSIQL": PSIQL, 
-    "IPPO": IPPO, 
-    "MAPPO": MAPPO, 
-    "ACSPPO": ACSPPO
-}
+if algo_name not in ALL_ALGORITHMS:
+    raise ValueError(f"Algorithm '{algo_name}' not found. Available styles are {list(ALL_ALGORITHMS.keys())}")
 
-availible = {**shielded_algos, **unshielded_algos}
-
-training_style = parser.parse_args().training_style
-
-if training_style not in availible:
-    raise ValueError(f"Training style {training_style} not found. Available styles are {availible.keys()}")
-
-algo = availible[training_style](env=env, 
+algo = ALL_ALGORITHMS[algo_name](env=env, 
                                  observation_space=observation_space,
                                  n_discrete_actions=n_discrete_actions,
                                  action_wrapper=action_wrapper,
@@ -111,7 +94,7 @@ algo = availible[training_style](env=env,
 # training episodes
 reward_hists = []
 eval_hists = []
-wandb.init(project=f"{system}_{env_name}", name=f"{training_style}_{cur_time}")
+wandb.init(project=f"{system}_{env_name}", name=f"{algo_name}_{cur_time}")
 ep=0
 for _ in trange(max_training_episodes):
     reward_hist = run_episode(env, algo, max_cycles, ep)
@@ -124,7 +107,7 @@ for _ in trange(max_training_episodes):
             eval_reward_hists.append(eval_reward_hist)
         eval_hists.append(eval_reward_hists)
 
-        algo.save(f"models/{env_name}/{training_style}_{cur_time}/ep{ep}")
+        algo.save(f"models/{env_name}/{algo_name}_{cur_time}/ep{ep}")
 
     ep+=1
 wandb.finish()
@@ -145,13 +128,13 @@ plt.plot([np.mean([np.mean(reward_hist[agent]) for agent in reward_hist.keys()])
 
 plt.xlabel("Episode")
 plt.ylabel("Mean Reward")
-plt.title(f"{training_style} on {env_name} (training)")
+plt.title(f"{algo_name} on {env_name} (training)")
 
 plt.legend()
-if not os.path.exists(f"plots/{env_name}/{training_style}"):
-    os.makedirs(f"plots/{env_name}/{training_style}")
+if not os.path.exists(f"plots/{env_name}/{algo_name}"):
+    os.makedirs(f"plots/{env_name}/{algo_name}")
 plt.grid(True)
-plt.savefig(f"plots/{env_name}/{training_style}/{cur_time}_train.png")
+plt.savefig(f"plots/{env_name}/{algo_name}/{cur_time}_train.png")
 # plt.show()
 plt.clf()
 # compute eval means and stds
@@ -180,10 +163,10 @@ plt.errorbar(range(0, max_training_episodes+1, eval_every), eval_means["mean"], 
 
 plt.xlabel("Episode")
 plt.ylabel("Mean Reward")
-plt.title(f"{training_style} on {env_name} (evaluation)")
+plt.title(f"{algo_name} on {env_name} (evaluation)")
 plt.grid(True)
 plt.legend()
-plt.savefig(f"plots/{env_name}/{training_style}/{cur_time}_eval.png")
+plt.savefig(f"plots/{env_name}/{algo_name}/{cur_time}_eval.png")
 
 # plt.show()
 
@@ -193,7 +176,7 @@ env = env_creator_func(render_mode=None, **env_creator_args)
 env.reset()
 # evaluation episodes
 del algo
-algo = availible[training_style](env=env, 
+algo = ALL_ALGORITHMS[algo_name](env=env, 
                                  observation_space=observation_space,
                                  n_discrete_actions=n_discrete_actions,
                                  action_wrapper=action_wrapper,
@@ -202,7 +185,7 @@ algo = availible[training_style](env=env,
                                  algorithm_params=default_ppo_params,
                                  alpha=alpha
                                  )
-algo.load(f"models/{env_name}/{training_style}_{cur_time}/ep{max_training_episodes-1}")
+algo.load(f"models/{env_name}/{algo_name}_{cur_time}/ep{max_training_episodes-1}")
 # algo.update_env(env)
 reward_hists = []
 for ep in range(5):
