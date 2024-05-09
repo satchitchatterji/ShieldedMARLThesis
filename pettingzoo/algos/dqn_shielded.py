@@ -324,7 +324,7 @@ class DQNShielded(object):
         # print(losses)
         self.loss_info.append(losses)
 
-    def save_model(self, filename):
+    def save(self, filename):
         """ Save a copy of the current model to file """
         torch.save(self.func_approx.state_dict(), filename)
         self.saved_model_name = filename
@@ -344,18 +344,13 @@ class DQNShielded(object):
         self.eval_mode = bool_val
         self.training = not bool_val
 
-    def load_model(self, filename=None, exploit=False):
+    def load(self, filename=None):
         """ Load model for training or optional exploitative deployment """
-        if filename is None:
+        if filename is not None:
             self.saved_model_name = filename
         self.func_approx = self.init_mlp(self.n_inputs, self.num_actions)
         self.func_approx.load_state_dict(torch.load(self.saved_model_name))
         self.func_approx.to(self.device)
-        if exploit:
-            self.epsilon = 0
-            self.epsilon_min = 0
-            self.training = False
-            self.eval_mode = True
 
     def begin_episode(self):
         self.prev_states = None

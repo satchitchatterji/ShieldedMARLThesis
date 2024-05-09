@@ -1,4 +1,5 @@
 from abc import abstractmethod
+import os
 
 class BaseMARLAlgo:
     def __init__(self, 
@@ -40,3 +41,19 @@ class BaseMARLAlgo:
     def eval(self, bool_val):
         for agent in self.agents.keys():
             self.agents[agent].set_eval_mode(bool_val)
+
+    def save(self, folder):
+        os.makedirs(folder, exist_ok=True)
+        for agent in self.agents.keys():
+            self.agents[agent].save(f"{folder}/{agent}")
+
+    def load(self, folder):
+        for agent in self.agents.keys():
+            if os.path.exists(f"{folder}/{agent}"):
+                self.agents[agent].load(f"{folder}/{agent}")
+            else:
+                print(f"Could not find model for {agent} at {folder}/{agent}")
+                
+    def update_env(self, env):
+        del self.env
+        self.env = env
