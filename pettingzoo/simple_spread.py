@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import pickle as pk
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -34,9 +35,13 @@ cur_time = time.time()
 # set up environment
 max_training_episodes=10
 max_cycles=25
-env_creator_func = parallel_stag_hunt.parallel_env
-env_creator_args = {"max_cycles": max_cycles}
-# env_creator_args = {"N": 3, "local_ratio": 0.5, "max_cycles": max_cycles, "continuous_actions": False}
+
+total_cycles = max_training_episodes * max_cycles
+print(f"Total cycles: {total_cycles}")
+
+env_creator_func = simple_spread_v3.parallel_env
+# env_creator_args = {"max_cycles": max_cycles}
+env_creator_args = {"N": 3, "local_ratio": 0.5, "max_cycles": max_cycles, "continuous_actions": False}
 # env = simple_spread_v3.parallel_env(render_mode=None, N=3, local_ratio=0.5, max_cycles=max_cycles, continuous_actions=False)
 env = env_creator_func(render_mode=None, **env_creator_args)
 
@@ -76,6 +81,8 @@ default_ppo_params = {
     "lr_critic": 0.001,       # learning rate for critic network
 }
 
+############################################ ALGO SELECTION ############################################
+
 algo_name = parser.parse_args().algo
 
 if algo_name not in ALL_ALGORITHMS:
@@ -91,7 +98,9 @@ algo = ALL_ALGORITHMS[algo_name](env=env,
                                  alpha=alpha
                                  )
 
-# training episodes
+
+############################################ TRAINING ############################################
+
 reward_hists = []
 eval_hists = []
 wandb.init(project=f"{system}_{env_name}", name=f"{algo_name}_{cur_time}")
@@ -111,13 +120,25 @@ for _ in trange(max_training_episodes):
 
     ep+=1
 wandb.finish()
-# env.close()
+env.close()
+
+############################################ POST TRAINING ############################################
 
 # for r, reward_hist in enumerate(reward_hists):
 #     print(f"Episode {r} : ", end="")    
 #     print({a:np.sum(reward_hist[a]) for a in reward_hist.keys()})
 #     print("Total reward: ", np.sum([np.sum(reward_hist[a]) for a in reward_hist.keys()]))
 
+# save hists as pickle
+if not os.path.exists(f"histories/{env_name}/{algo_name}/{cur_time}_train.pk"):
+    os.makedirs(f"histories/{env_name}/{algo_name}", exist_ok=True)
+with open(f"histories/{env_name}/{algo_name}/{cur_time}_train.pk", "wb") as f:
+    pk.dump(reward_hists, f)
+
+if not os.path.exists(f"histories/{env_name}/{algo_name}/{cur_time}_eval.pk"):
+    os.makedirs(f"histories/{env_name}/{algo_name}", exist_ok=True)
+with open(f"histories/{env_name}/{algo_name}/{cur_time}_eval.pk", "wb") as f:
+    pk.dump(eval_hists, f)
 
 # plot mean rewards per episode
 agent_rewards = [[np.mean(reward_hist[agent]) for reward_hist in reward_hists] for agent in reward_hists[0].keys()]
@@ -169,8 +190,9 @@ plt.legend()
 plt.savefig(f"plots/{env_name}/{algo_name}/{cur_time}_eval.png")
 
 # plt.show()
+exit()
 
-############################################ EVALUATION ############################################
+############################################ OFFLINE EVALUATION ############################################
 # set up environment
 env = env_creator_func(render_mode=None, **env_creator_args)
 env.reset()

@@ -7,3 +7,5 @@ src
 *.py[cod]
 
 models
+histories
+plots
