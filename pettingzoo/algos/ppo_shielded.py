@@ -7,19 +7,6 @@ from pls.shields.shields import Shield
 
 # https://github.com/nikhilbarhate99/PPO-PyTorch/blob/master/PPO.py
 
-################################## set device ##################################
-print("============================================================================================")
-# set device to cpu or cuda
-device = torch.device('cpu')
-if(torch.cuda.is_available()): 
-    device = torch.device('cuda:0') 
-    torch.cuda.empty_cache()
-    print("Device set to : " + str(torch.cuda.get_device_name(device)))
-else:
-    print("Device set to : cpu")
-print("============================================================================================")
-
-
 ################################## PPO Policy ##################################
 class RolloutBuffer:
     def __init__(self):
@@ -66,6 +53,7 @@ class ActorCriticShielded(nn.Module):
                         nn.Linear(64, 1)
                     )
         
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         # shield
         self.get_sensor_value_ground_truth = get_sensor_value_ground_truth
         # agents can share a shield if a shield is passed in
@@ -201,6 +189,8 @@ class PPOShielded:
                  **kwargs # made to be comptible with DQN
                  ):
 
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
         self.gamma = gamma
         self.eps_clip = eps_clip
         self.train_epochs = train_epochs
@@ -213,13 +203,13 @@ class PPOShielded:
         self.state_dim = state_dim
         self.action_dim = action_dim
 
-        self.policy = ActorCriticShielded(state_dim, action_dim, **policy_kw_args).to(device)
+        self.policy = ActorCriticShielded(state_dim, action_dim, **policy_kw_args).to(self.device)
         self.optimizer = torch.optim.Adam([
                         {'params': self.policy.actor.parameters(), 'lr': lr_actor},
                         {'params': self.policy.critic.parameters(), 'lr': lr_critic}
                     ])
 
-        self.policy_old = ActorCriticShielded(state_dim, action_dim, **policy_kw_args).to(device)
+        self.policy_old = ActorCriticShielded(state_dim, action_dim, **policy_kw_args).to(self.device)
         self.policy_old.load_state_dict(self.policy.state_dict())
         
         self.update_timestep = update_timestep
@@ -236,39 +226,39 @@ class PPOShielded:
         del self.policy_old
         del self.optimizer
 
-        self.policy = policy.to(device)
+        self.policy = policy.to(self.device)
         self.optimizer = torch.optim.Adam([
                 {'params': self.policy.actor.parameters(), 'lr': self.lr_actor},
                 {'params': self.policy.critic.parameters(), 'lr': self.lr_critic}
             ])
-        self.policy_old = ActorCriticShielded(self.state_dim, self.action_dim, **self.policy_kw_args).to(device)
+        self.policy_old = ActorCriticShielded(self.state_dim, self.action_dim, **self.policy_kw_args).to(self.device)
         self.policy_old.load_state_dict(self.policy.state_dict())
 
     def set_policy_critic(self, critic):
         del self.optimizer
 
-        self.policy.critic = critic.to(device)
+        self.policy.critic = critic.to(self.device)
         self.optimizer = torch.optim.Adam([
                 {'params': self.policy.actor.parameters(), 'lr': self.lr_actor},
                 {'params': self.policy.critic.parameters(), 'lr': self.lr_critic}
             ])
-        self.policy_old = ActorCriticShielded(self.state_dim, self.action_dim, **self.policy_kw_args).to(device)
+        self.policy_old = ActorCriticShielded(self.state_dim, self.action_dim, **self.policy_kw_args).to(self.device)
         self.policy_old.load_state_dict(self.policy.state_dict())
 
     def set_policy_actor(self, actor):
         del self.optimizer
 
-        self.policy.actor = actor.to(device)
+        self.policy.actor = actor.to(self.device)
         self.optimizer = torch.optim.Adam([
                 {'params': self.policy.actor.parameters(), 'lr': self.lr_actor},
                 {'params': self.policy.critic.parameters(), 'lr': self.lr_critic}
             ])
-        self.policy_old = ActorCriticShielded(self.state_dim, self.action_dim, **self.policy_kw_args).to(device)
+        self.policy_old = ActorCriticShielded(self.state_dim, self.action_dim, **self.policy_kw_args).to(self.device)
         self.policy_old.load_state_dict(self.policy.state_dict())
 
     def select_action(self, state):
         with torch.no_grad():
-            state = torch.FloatTensor(state).to(device)
+            state = torch.FloatTensor(state).to(self.device)
             action, action_logprob, state_val = self.policy_old.act(state)
         
         if not self.eval_mode:
@@ -290,14 +280,14 @@ class PPOShielded:
             rewards.insert(0, discounted_reward)
             
         # Normalizing the rewards
-        rewards = torch.tensor(rewards, dtype=torch.float32).to(device)
+        rewards = torch.tensor(rewards, dtype=torch.float32).to(self.device)
         rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-7)
 
         # convert list to tensor
-        old_states = torch.squeeze(torch.stack(self.buffer.states, dim=0)).detach().to(device)
-        old_actions = torch.squeeze(torch.stack(self.buffer.actions, dim=0)).detach().to(device)
-        old_logprobs = torch.squeeze(torch.stack(self.buffer.logprobs, dim=0)).detach().to(device)
-        old_state_values = torch.squeeze(torch.stack(self.buffer.state_values, dim=0)).detach().to(device)
+        old_states = torch.squeeze(torch.stack(self.buffer.states, dim=0)).detach().to(self.device)
+        old_actions = torch.squeeze(torch.stack(self.buffer.actions, dim=0)).detach().to(self.device)
+        old_logprobs = torch.squeeze(torch.stack(self.buffer.logprobs, dim=0)).detach().to(self.device)
+        old_state_values = torch.squeeze(torch.stack(self.buffer.state_values, dim=0)).detach().to(self.device)
 
         # calculate advantages
         advantages = rewards.detach() - old_state_values.detach()
