@@ -12,52 +12,38 @@ import wandb
 # from sensor_wrappers import WaterworldSensorWrapper
 from shield_selector import ShieldSelector
 
-from pettingzoo.mpe import simple_spread_v3
-sys.path.append("../grid_envs")
-import parallel_stag_hunt
-
-sys.path.append("../pettingzoo_dilemma_envs")
-from dilemma_pettingzoo import parallel_env as dilemma_parallel_env
-
-
 from algos import *
+from env_selection import ALL_ENVS, ALL_ENVS_ARGS
+from config import config
 
 from run_episode import run_episode, eval_episode
-
-# accept cmd line args
-import argparse
-parser = argparse.ArgumentParser()
-parser.add_argument("--algo", 
-                    type=str, 
-                    default="IQL", 
-                    help=f"Training style to use. Options are {ALL_ALGORITHMS.keys()}"
-                    )
 
 system = os.name
 cur_time = time.time()
 
 # set up environment
-max_training_episodes=100
-max_cycles=25
+max_training_episodes = config.max_eps
+max_cycles = config.max_cycles
 
 total_cycles = max_training_episodes * max_cycles
 
-# env_creator_func = simple_spread_v3.parallel_env
-env_creator_func = dilemma_parallel_env
-env_creator_args = {"game": "stag", "num_actions": 2, "max_cycles": max_cycles}
-# env_creator_args = {"max_cycles": max_cycles}
-# env_creator_args = {"N": 3, "local_ratio": 0.5, "max_cycles": max_cycles, "continuous_actions": False}
-# env = simple_spread_v3.parallel_env(render_mode=None, N=3, local_ratio=0.5, max_cycles=max_cycles, continuous_actions=False)
+env_creator_func = ALL_ENVS[config.env]
+env_creator_args = ALL_ENVS_ARGS[config.env]
+env_creator_args.update({"max_cycles": max_cycles})
+
 env = env_creator_func(render_mode=None, **env_creator_args)
 
 env_name = env.metadata["name"]
-eval_every = 5
-n_eval = 10
+eval_every = config.eval_every
+n_eval = config.n_eval
 
-print(env.reset())
+env.reset()
 
 n_discrete_actions = env.action_space(env.possible_agents[0]).n
-observation_space = env.observation_space(env.possible_agents[0]).shape[0] if type(env.observation_space(env.possible_agents[0])) == np.ndarray else env.observation_space(env.possible_agents[0]).n
+if hasattr(env.observation_space(env.possible_agents[0]), "shape") and len(env.observation_space(env.possible_agents[0]).shape) > 0: 
+    observation_space = env.observation_space(env.possible_agents[0]).shape[0]  # for box spaces
+else: 
+    observation_space = env.observation_space(env.possible_agents[0]).n         # for discrete spaces
 
 # action_wrapper = WaterworldActionWrapper(n_discrete_actions, pursuer_max_accel, 1.0)
 action_wrapper = lambda x: x
@@ -76,8 +62,8 @@ sensor_wrapper = lambda x: x
 #     "get_sensor_value_ground_truth": sensor_wrapper,
 # }
 
+alpha = config.shield_alpha
 sh_params = None
-alpha = 1.0
 default_ppo_params = {
     "update_timestep": int(max_cycles/4),      # update policy every n timesteps # TODO: check this
     "K_epochs": 50,               # update policy for K epochs in one PPO update
@@ -89,7 +75,7 @@ default_ppo_params = {
 
 ############################################ ALGO SELECTION ############################################
 
-algo_name = parser.parse_args().algo
+algo_name = config.algo
 
 if algo_name not in ALL_ALGORITHMS:
     raise ValueError(f"Algorithm '{algo_name}' not found. Available styles are {list(ALL_ALGORITHMS.keys())}")
