@@ -33,8 +33,11 @@ cur_time = time.time()
 # set up environment
 max_training_episodes=10
 max_cycles=25
+env_creator_func = parallel_stag_hunt.parallel_env
+env_creator_args = {"max_cycles": max_cycles}
+# env_creator_args = {"N": 3, "local_ratio": 0.5, "max_cycles": max_cycles, "continuous_actions": False}
 # env = simple_spread_v3.parallel_env(render_mode=None, N=3, local_ratio=0.5, max_cycles=max_cycles, continuous_actions=False)
-env = parallel_stag_hunt.parallel_env(render_mode=None, max_cycles=max_cycles)
+env = env_creator_func(render_mode=None, **env_creator_args)
 
 env_name = env.metadata["name"]
 eval_every = 5
@@ -60,14 +63,6 @@ sensor_wrapper = lambda x: x
 #     "observation_type": "ground truth",
 #     "get_sensor_value_ground_truth": sensor_wrapper,
 # }
-
-# reference means: vals
-# IQL:     −155.81 ± 1.50
-# IPPO:    −149.89 ± 2.91
-# MAPPO:   −149.26 ± 0.94
-# PSIQL:   −141.87 ± 1.68
-# ACSPPO:  −132.46 ± 3.54 or −128.64 ± 2.83 (without identity?)
-
 
 sh_params = None
 alpha = 1.0
@@ -119,19 +114,21 @@ eval_hists = []
 wandb.init(project=f"{system}_{env_name}", name=f"{training_style}_{cur_time}")
 ep=0
 for _ in trange(max_training_episodes):
-    reward_hist = run_episode(env, algo, max_cycles, action_wrapper, ep)
+    reward_hist = run_episode(env, algo, max_cycles, ep)
     reward_hists.append(reward_hist)
 
     if ep % eval_every == 0 or ep == max_training_episodes-1:
         eval_reward_hists = []
         for _ in range(n_eval):
-            eval_reward_hist = eval_episode(env, algo, max_cycles, action_wrapper)
+            eval_reward_hist = eval_episode(env, algo, max_cycles)
             eval_reward_hists.append(eval_reward_hist)
         eval_hists.append(eval_reward_hists)
 
+        algo.save(f"models/{env_name}/{training_style}_{cur_time}/ep{ep}")
+
     ep+=1
 wandb.finish()
-env.close()
+# env.close()
 
 # for r, reward_hist in enumerate(reward_hists):
 #     print(f"Episode {r} : ", end="")    
@@ -151,10 +148,10 @@ plt.ylabel("Mean Reward")
 plt.title(f"{training_style} on {env_name} (training)")
 
 plt.legend()
-if not os.path.exists(f"plots/{env_name}"):
-    os.makedirs(f"plots/{env_name}")
+if not os.path.exists(f"plots/{env_name}/{training_style}"):
+    os.makedirs(f"plots/{env_name}/{training_style}")
 plt.grid(True)
-plt.savefig(f"plots/{env_name}/{training_style}_{cur_time}_train.png")
+plt.savefig(f"plots/{env_name}/{training_style}/{cur_time}_train.png")
 # plt.show()
 plt.clf()
 # compute eval means and stds
@@ -186,21 +183,30 @@ plt.ylabel("Mean Reward")
 plt.title(f"{training_style} on {env_name} (evaluation)")
 plt.grid(True)
 plt.legend()
-plt.savefig(f"plots/{env_name}/{training_style}_{cur_time}_eval.png")
+plt.savefig(f"plots/{env_name}/{training_style}/{cur_time}_eval.png")
 
 # plt.show()
 
-exit()
-
 ############################################ EVALUATION ############################################
 # set up environment
-env = parallel_stag_hunt.parallel_env(render_mode="human", max_cycles=max_cycles)
-observations, infos = env.reset()
+env = env_creator_func(render_mode=None, **env_creator_args)
+env.reset()
 # evaluation episodes
+del algo
+algo = availible[training_style](env=env, 
+                                 observation_space=observation_space,
+                                 n_discrete_actions=n_discrete_actions,
+                                 action_wrapper=action_wrapper,
+                                 sensor_wrapper=sensor_wrapper,
+                                 sh_params=sh_params,
+                                 algorithm_params=default_ppo_params,
+                                 alpha=alpha
+                                 )
+algo.load(f"models/{env_name}/{training_style}_{cur_time}/ep{max_training_episodes-1}")
+# algo.update_env(env)
 reward_hists = []
-for ep in range(1):
-    print(f"Episode {ep}")
-    reward_hist = eval_episode(env, agents, max_cycles, action_wrapper)
+for ep in range(5):
+    reward_hist = eval_episode(env, algo, max_cycles)
     reward_hists.append(reward_hist)
 
 for reward_hist in reward_hists:
