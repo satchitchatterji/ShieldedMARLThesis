@@ -9,7 +9,7 @@ from dilemma_pettingzoo import parallel_env as dilemma_parallel_env
 
 ALL_ENVS = {
     "simple_spread_v3": simple_spread_v3.parallel_env,
-    "markov_stag_hunt": parallel_stag_hunt,
+    "markov_stag_hunt": parallel_stag_hunt.parallel_env,
     "nfg_stag_hunt": dilemma_parallel_env,
 }
 
