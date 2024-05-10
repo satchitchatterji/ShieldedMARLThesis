@@ -33,18 +33,19 @@ env_creator_args = ALL_ENVS_ARGS[config.env]
 env_creator_args.update({"max_cycles": max_cycles})
 
 env = env_creator_func(render_mode=None, **env_creator_args)
+env.reset()
 
 env_name = env.metadata["name"]
 eval_every = config.eval_every
 n_eval = config.n_eval
-
-env.reset()
 
 n_discrete_actions = env.action_space(env.possible_agents[0]).n
 if hasattr(env.observation_space(env.possible_agents[0]), "shape") and len(env.observation_space(env.possible_agents[0]).shape) > 0: 
     observation_space = env.observation_space(env.possible_agents[0]).shape[0]  # for box spaces with shape
 else: 
     observation_space = env.observation_space(env.possible_agents[0]).n         # for discrete spaces?
+
+print(n_discrete_actions, observation_space)
 
 # action_wrapper = WaterworldActionWrapper(n_discrete_actions, pursuer_max_accel, 1.0)
 action_wrapper = lambda x: x
@@ -53,17 +54,19 @@ sensor_wrapper = lambda x: x
 # shield_file = ShieldSelector(env_name="waterworld", 
 #                             n_actions=action_wrapper.n_actions, 
 #                             n_sensors=sensor_wrapper.num_sensors)
-# sh_params = {
-#     "config_folder": ".",
-#     "num_sensors": sensor_wrapper.num_sensors,
-#     "num_actions": n_discrete_actions,
-#     "differentiable": True,
-#     "shield_program": shield_file.file,
-#     "observation_type": "ground truth",
-#     "get_sensor_value_ground_truth": sensor_wrapper,
-# }
+sh_params = {
+    "config_folder": ".",
+    # "num_sensors": sensor_wrapper.num_sensors,
+    "num_sensors": observation_space,
+    # "num_actions": n_discrete_actions,
+    "num_actions": n_discrete_actions,
+    "differentiable": True,
+    "shield_program": "shields/simple_stag_v0/shield_v0.pl",
+    "observation_type": "ground truth",
+    "get_sensor_value_ground_truth": sensor_wrapper,
+}
 
-sh_params = None
+# sh_params = None
 ppo_params = ["update_timestep", "train_epochs", "gamma", "eps_clip", "lr_actor", "lr_critic"]
 dqn_params = ["update_timestep", "train_epochs", "gamma", "buffer_size", "batch_size", "lr", "eps_decay", "eps_min", "tau", "target_update_type"]
 extracted_ppo = {k: v for k, v in vars(config).items() if k in ppo_params}
