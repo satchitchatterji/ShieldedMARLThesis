@@ -94,6 +94,7 @@ algo = ALL_ALGORITHMS[algo_name](env=env,
 reward_hists = []
 eval_hists = []
 wandb.init(project=f"{system}_{env_name}", name=f"{algo_name}_{cur_time}", config=vars(config))
+
 ep=0
 for _ in range(max_training_episodes):
     reward_hist = run_episode(env, algo, max_cycles, ep)
@@ -109,6 +110,7 @@ for _ in range(max_training_episodes):
         algo.save(f"models/{env_name}/{algo_name}_{cur_time}/ep{ep}")
 
     ep+=1
+
 wandb.finish()
 env.close()
 
@@ -169,9 +171,9 @@ for eval_hist in eval_hists:
 # plot eval info
 for a, agent in enumerate(algo.agents.keys()):
     # TODO: Breaks when max_training_episodes is not divisible by eval_every
-    plt.errorbar(range(0, max_training_episodes+1, eval_every), eval_means[agent], yerr=eval_stds[agent], label=f"{agent} mean")
+    plt.errorbar(range(len(eval_means[agent])), eval_means[agent], yerr=eval_stds[agent], label=f"{agent} mean")
 
-plt.errorbar(range(0, max_training_episodes+1, eval_every), eval_means["mean"], yerr=eval_stds["mean"], label="mean", color="black", linestyle="--")
+plt.errorbar(range(len(eval_means[agent])), eval_means["mean"], yerr=eval_stds["mean"], label="mean", color="black", linestyle="--")
 
 plt.xlabel("Episode")
 plt.ylabel("Mean Reward")

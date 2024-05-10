@@ -48,7 +48,7 @@ parser.add_argument("--shield_alpha",
                     help="Alpha value for shield."
                     )
 
-# Model Pararms, common to all algorithms
+# Model params, common to all algorithms
 parser.add_argument("--update_timestep",
                     type=int,
                     default=25,
@@ -60,7 +60,6 @@ parser.add_argument("--train_epochs",
                     default=50,
                     help="Train policy/Q network for K epochs in one PPO/DQN update."
                     )
-
 
 parser.add_argument("--gamma",                                      
                     type=float,
@@ -115,7 +114,7 @@ parser.add_argument("--tau",
 
 parser.add_argument("--eps_min",
                     type=float,
-                    default=0.1,
+                    default=0.05,
                     help="(DQN) Min epsilon for epsilon greedy policy."
                     )
 
