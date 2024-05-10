@@ -65,7 +65,7 @@ sensor_wrapper = lambda x: x
 
 sh_params = None
 ppo_params = ["update_timestep", "train_epochs", "gamma", "eps_clip", "lr_actor", "lr_critic"]
-dqn_params = ["update_timestep", "train_epochs", "gamma", "buffer_size", "batch_size", "lr", "eps_decay", "eps_min", "tau"]
+dqn_params = ["update_timestep", "train_epochs", "gamma", "buffer_size", "batch_size", "lr", "eps_decay", "eps_min", "tau", "target_update_type"]
 extracted_ppo = {k: v for k, v in vars(config).items() if k in ppo_params}
 extracted_dqn = {k: v for k, v in vars(config).items() if k in dqn_params}
 all_algo_params = {k: v for k, v in vars(config).items() if k in ppo_params or k in dqn_params}
@@ -131,6 +131,15 @@ if not os.path.exists(f"histories/{env_name}/{algo_name}/{cur_time}_eval.pk"):
     os.makedirs(f"histories/{env_name}/{algo_name}", exist_ok=True)
 with open(f"histories/{env_name}/{algo_name}/{cur_time}_eval.pk", "wb") as f:
     pk.dump(eval_hists, f)
+
+print("Training complete. Fileref:", cur_time)
+# safe config dict to json file
+import json
+if not os.path.exists(f"configs/{env_name}/{algo_name}/{cur_time}.json"):
+    os.makedirs(f"configs/{env_name}/{algo_name}", exist_ok=True)
+with open(f"configs/{env_name}/{algo_name}/{cur_time}.json", "w") as f:
+    s = json.dumps(vars(config), indent=4)
+    f.write(s)
 
 # plot mean rewards per episode
 agent_rewards = [[np.mean(reward_hist[agent]) for reward_hist in reward_hists] for agent in reward_hists[0].keys()]
