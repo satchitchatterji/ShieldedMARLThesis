@@ -41,6 +41,7 @@ class DQNShielded(object):
         self.action_type = 'discrete'
         self.learning = True
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.step = 0
 
         # input: num_states
         # output: Q(s,a)
@@ -58,7 +59,7 @@ class DQNShielded(object):
         self.base_loss_fn = None
         if func_approx is not None:
             self.func_approx = func_approx.to(self.device)
-
+            
         # Hyperparameters
         self.epsilon = 1.0
         self.epsilon_decay = eps_decay
@@ -70,6 +71,7 @@ class DQNShielded(object):
         self.max_history = buffer_size
         self.batch_size = batch_size
         self.epochs = train_epochs
+        self.update_timestep = update_timestep
 
         # memory and bookkeeping
         self.history = []
@@ -121,6 +123,7 @@ class DQNShielded(object):
         # set up training stuff
         self.optimizer = torch.optim.Adam(self.func_approx.parameters(), lr=self.learning_rate)
         self.base_loss_fn = torch.nn.MSELoss().to(self.device)
+        self.update_target_net(reinit=True)
 
     def init_mlp(self, input_len, output_len):
         """ Initialize an MLP as a function approximator """
@@ -138,6 +141,12 @@ class DQNShielded(object):
         model.to(self.device)
         
         return model
+    
+    def update_target_net(self, reinit=False):
+        if reinit:
+            self.target_func_approx = self.init_mlp(self.n_inputs, self.num_actions)
+        self.target_func_approx.load_state_dict(self.func_approx.state_dict())
+        self.target_func_approx.eval()
 
     def calc_action_values(self, inputs):
         """ Return Q(s,a) for a given state s:=inputs,
@@ -163,8 +172,6 @@ class DQNShielded(object):
 
     def act(self, states):
         """ Choose an action for each agent, given the current state """
-        # if sum(states[90:120]) < 30:
-        #     print([i for i, s in enumerate(states[90:120]) if s < 1])
 
         action = self.get_decision(states)
 
@@ -257,6 +264,7 @@ class DQNShielded(object):
     def update_reward(self, reward, terminal=False):
         """ Record the current reward and whether or not the state is terminal. """
         if self.training:
+            
             self.history.append([None]*6)
             self.history[-1][STATE] = self._temp_history[STATE]
             self.history[-1][Q_VALS] = self._temp_history[Q_VALS]
@@ -266,7 +274,13 @@ class DQNShielded(object):
             self.history[-1][ACTION_DIST] = self._temp_history[ACTION_DIST]
             # forget the oldest memories to make room for new ones
             if len(self.history) > self.max_history:
-                self.history.pop(0)        
+                self.history.pop(0)
+            
+            # update the target network
+            if self.step % self.update_timestep == 0:
+                self.update_target_net()
+            
+            self.step += 1
         
         self.reward = reward
 
@@ -321,13 +335,11 @@ class DQNShielded(object):
         targets = torch.mul(self.gamma, torch.max(next_q_vals, axis=1)[0])
         y_train[:, cur_actions] = cur_rewards + torch.mul(1-cur_terminal.int().float(), targets)
         
-
         safety_augmentations =  self.get_safety_loss(cur_states, cur_action_dist)
         safety_loss = torch.mean(safety_augmentations).to(self.device)
 
-        # forward pass
-        # TODO: Create target network for DQN
-        y_pred = self.func_approx(X_train)
+        # forward pass through the target network
+        y_pred = self.target_func_approx(X_train)
 
         # calculate loss
         base_loss = self.base_loss_fn(y_pred, y_train)
@@ -368,6 +380,10 @@ class DQNShielded(object):
         self.func_approx = self.init_mlp(self.n_inputs, self.num_actions)
         self.func_approx.load_state_dict(torch.load(self.saved_model_name))
         self.func_approx.to(self.device)
+
+        self.target_func_approx = self.init_mlp(self.n_inputs, self.num_actions)
+        self.target_func_approx.load_state_dict(self.func_approx.state_dict())
+        self.target_func_approx.eval()
 
     def begin_episode(self):
         self.prev_states = None
