@@ -108,8 +108,14 @@ parser.add_argument("--lr",
 
 parser.add_argument("--tau",
                     type=float,
-                    default=0.001,
+                    default=0.01,
                     help="(DQN) Soft update parameter."
+                    )
+
+parser.add_argument("--target_update_type",
+                    type=str,
+                    default="soft",
+                    help="(DQN) Type of update to use. Options are 'soft' and 'hard'."
                     )
 
 parser.add_argument("--eps_min",

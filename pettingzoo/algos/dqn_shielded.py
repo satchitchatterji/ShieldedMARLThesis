@@ -34,6 +34,7 @@ class DQNShielded(object):
                  eps_decay=0.999,
                  update_timestep=25,
                  tau=0.01,
+                 update_target_type='soft',
                  **kwargs # made to be compatible with PPO
                  ):
 
@@ -72,6 +73,8 @@ class DQNShielded(object):
         self.batch_size = batch_size
         self.epochs = train_epochs
         self.update_timestep = update_timestep
+        self.update_target_type = update_target_type
+        self.tau = tau
 
         # memory and bookkeeping
         self.history = []
@@ -145,8 +148,14 @@ class DQNShielded(object):
     def update_target_net(self, reinit=False):
         if reinit:
             self.target_func_approx = self.init_mlp(self.n_inputs, self.num_actions)
-        self.target_func_approx.load_state_dict(self.func_approx.state_dict())
-        self.target_func_approx.eval()
+
+        if self.update_target_type == 'hard':
+            if self.step % self.update_timestep == 0:
+                self.target_func_approx.load_state_dict(self.func_approx.state_dict())
+                self.target_func_approx.eval()
+        elif self.update_target_type == 'soft':
+            for target_param, param in zip(self.target_func_approx.parameters(), self.func_approx.parameters()):
+                target_param.data.copy_(self.tau * param.data + (1.0 - self.tau) * target_param.data)
 
     def calc_action_values(self, inputs):
         """ Return Q(s,a) for a given state s:=inputs,
@@ -277,8 +286,7 @@ class DQNShielded(object):
                 self.history.pop(0)
             
             # update the target network
-            if self.step % self.update_timestep == 0:
-                self.update_target_net()
+            self.update_target_net()
             
             self.step += 1
         
