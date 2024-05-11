@@ -48,7 +48,9 @@ else:
 print(n_discrete_actions, observation_space)
 
 action_wrapper = action_wrappers.IdentityActionWrapper(n_discrete_actions)
-sensor_wrapper = sensor_wrappers.IdentitySensorWrapper(env, observation_space)
+# sensor_wrapper = sensor_wrappers.IdentitySensorWrapper(env, observation_space)
+sensor_wrapper = sensor_wrappers.MarkovStagHuntSensorWrapper(env, observation_space)
+
 shield_selector = ShieldSelector(env_name=env_name, 
                                  n_actions=action_wrapper.num_actions, 
                                  n_sensors=sensor_wrapper.num_sensors,

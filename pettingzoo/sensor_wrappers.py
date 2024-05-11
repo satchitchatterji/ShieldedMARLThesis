@@ -1,5 +1,8 @@
 import torch
 import numpy as np
+import sys
+sys.path.append("../grid_envs")
+import parallel_stag_hunt as psh
 
 class IdentitySensorWrapper:
     """
@@ -14,6 +17,77 @@ class IdentitySensorWrapper:
     
     def __call__(self, x):
         return x
+
+class MarkovStagHuntSensorWrapper:
+
+    def __init__(self, env, num_sensors=None):
+        self.env = env
+        self.num_sensors = 6 # based on stag relative position
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.translation_func = self.stag_surrounded
+
+    def one_hot_to_obs(self, one_hot_obs):
+        GRID_SIZE = psh.GRID_SIZE
+        one_hot_obs = one_hot_obs.reshape((GRID_SIZE[0], GRID_SIZE[1], psh.N_OBS_TYPES))
+        obs = np.zeros((GRID_SIZE[0], GRID_SIZE[1]), dtype=int)
+        for x in range(GRID_SIZE[0]):
+            for y in range(GRID_SIZE[1]):
+                obs[x][y] = np.argmax(one_hot_obs[x][y])
+        return obs
+    
+    def stag_surrounded(self, obs):
+        """
+        Returns the relative position of the stag to the agent,
+                    if the agent is close to the stag, and
+                    if the stag is surrounded by both agents.
+        """
+        obs = self.one_hot_to_obs(obs.cpu().numpy())
+        stag_x, stag_y = np.where(obs == psh.OBS_STAG) # assuming only one stag
+        stag_x, stag_y = stag_x[0], stag_y[0]
+
+        agent_self = np.where(obs == psh.OBS_AGENT_SELF)
+        agent_other = np.where(obs == psh.OBS_AGENT_OTHER)
+        both_agents = np.where(obs == psh.OBS_AGENT_BOTH)
+        try:
+            agent_self = agent_self if len(agent_self[0]) > 0 else both_agents
+            agent_self_x, agent_self_y = agent_self[0][0], agent_self[1][0]
+
+            agent_other = agent_other if len(agent_other[0]) > 0 else both_agents
+            agent_other_x, agent_other_y = agent_other[0][0], agent_other[1][0]
+        except IndexError as e:
+            print(obs)
+            print(agent_self, agent_other, both_agents)
+            raise e
+        # print("\n", stag_x, stag_y, agent_self_x, agent_self_y, agent_other_x, agent_other_y, both_agents, "\n")
+        assert agent_self_x is not None, f"Agent self not found in observation: {obs}"
+
+        rel_x = stag_x - agent_self_x
+        rel_y = stag_y - agent_self_y
+        
+        stag_above = rel_x < 0
+        stag_below = rel_x > 0
+        stag_left = rel_y < 0
+        stag_right = rel_y > 0
+
+        # check which agents are in the stag's Moore's neighborhood
+        stag_near_self = 0
+        if agent_self_x-1 <= stag_x <= agent_self_x+1 and agent_self_y-1 <= stag_y <= agent_self_y+1:
+            stag_near_self = 1
+
+        stag_near_other = 0
+        if agent_other_x-1 <= stag_x <= agent_other_x+1 and agent_other_y-1 <= stag_y <= agent_other_y+1:
+            stag_near_other = 1
+
+        return torch.tensor(np.array([stag_left, stag_right, stag_above, stag_below, stag_near_self, stag_near_other], dtype=np.int32), 
+                            dtype=torch.int32, device=self.device)
+
+    def __call__(self, x):
+        # TODO: batch processing
+        if len(x.shape) == 1:
+            return self.translation_func(x)
+        else:
+            return torch.stack([self.translation_func(x[i]) for i in range(x.shape[0])])
+        
 class WaterworldSensorWrapper:
     """
     Sensor wrapper for the Waterworld environment. 
@@ -23,6 +97,7 @@ class WaterworldSensorWrapper:
         self.env = env
         self.num_inputs = env.observation_spaces[env.agents[0]].shape[0]
         self.output_type = output_type
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         if output_type == "invert":
             self.num_sensors = self.num_inputs
             self.translation_func = self.invert_sensor_vals
@@ -34,8 +109,7 @@ class WaterworldSensorWrapper:
     
     def reduce_to_8(self, x, use_cuda=True):
         assert len(x) == 162, f"Expected 162 sensor values, got {len(x)}"
-        device = torch.device("cuda" if use_cuda and torch.cuda.is_available() else "cpu")
-        x_new = torch.zeros(8*5+2, device=device) # 5 types of sensors, 8 ranges, 2 for the last two sensors
+        x_new = torch.zeros(8*5+2, device=self.device) # 5 types of sensors, 8 ranges, 2 for the last two sensors
         x_new[-1] = 1-x[-1]
         x_new[-2] = 1-x[-2]
         x_diff = 1-x[:len(x)-2]
@@ -46,7 +120,7 @@ class WaterworldSensorWrapper:
         ranged_x_diff.append(first_range)
         for r in ranges[1:-1]:
             ranged_x_diff.append(x_diff[r[0]:r[1]+1])
-        ranged_x_diff = torch.stack(ranged_x_diff).to(device)
+        ranged_x_diff = torch.stack(ranged_x_diff).to(self.device)
         ranged_x_diff = ranged_x_diff.mean(axis=1)
         x_new[:8*5] = ranged_x_diff.flatten()
         return x_new

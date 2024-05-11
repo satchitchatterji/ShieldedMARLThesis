@@ -21,6 +21,9 @@ class ShieldSelector:
             elif env_name == "simple_pd_v0":
                 self.file = "simple_pd_v0/shield_v0.pl"
 
+            elif env_name == "markov_stag_hunt":
+                self.file = "markov_stag_hunt/shield_v0.pl"
+
             elif env_name == "waterworld":
                 raise NotImplementedError("Shield program for Waterworld not implemented yet.")
 
