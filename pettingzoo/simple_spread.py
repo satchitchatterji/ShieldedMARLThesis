@@ -8,8 +8,8 @@ import matplotlib.pyplot as plt
 from tqdm import trange
 import wandb
 
-# from action_wrappers import WaterworldActionWrapper
-# from sensor_wrappers import WaterworldSensorWrapper
+import action_wrappers
+import sensor_wrappers
 from shield_selector import ShieldSelector
 
 from algos import *
@@ -47,21 +47,20 @@ else:
 
 print(n_discrete_actions, observation_space)
 
-# action_wrapper = WaterworldActionWrapper(n_discrete_actions, pursuer_max_accel, 1.0)
-action_wrapper = lambda x: x
-sensor_wrapper = lambda x: x
-# sensor_wrapper = WaterworldSensorWrapper(env, output_type="reduce_to_8")
-# shield_file = ShieldSelector(env_name="waterworld", 
-#                             n_actions=action_wrapper.n_actions, 
-#                             n_sensors=sensor_wrapper.num_sensors)
+action_wrapper = action_wrappers.IdentityActionWrapper(n_discrete_actions)
+sensor_wrapper = sensor_wrappers.IdentitySensorWrapper(env, observation_space)
+shield_selector = ShieldSelector(env_name=env_name, 
+                                 n_actions=action_wrapper.num_actions, 
+                                 n_sensors=sensor_wrapper.num_sensors,
+                                 filename=config.shield_file
+                                 )
+
 sh_params = {
-    "config_folder": ".",
-    # "num_sensors": sensor_wrapper.num_sensors,
-    "num_sensors": observation_space,
-    # "num_actions": n_discrete_actions,
-    "num_actions": n_discrete_actions,
+    "config_folder": shield_selector.base_dir,
+    "num_sensors": sensor_wrapper.num_sensors,
+    "num_actions": action_wrapper.num_actions,
     "differentiable": True,
-    "shield_program": "shields/simple_stag_v0/shield_v0.pl",
+    "shield_program": shield_selector.file,
     "observation_type": "ground truth",
     "get_sensor_value_ground_truth": sensor_wrapper,
 }
@@ -96,6 +95,7 @@ algo = ALL_ALGORITHMS[algo_name](env=env,
 
 reward_hists = []
 eval_hists = []
+eval_episodes = []
 wandb.init(project=f"{system}_{env_name}", name=f"{algo_name}_{cur_time}", config=vars(config))
 
 ep=0
@@ -104,6 +104,7 @@ for _ in range(max_training_episodes):
     reward_hists.append(reward_hist)
 
     if ep % eval_every == 0 or ep == max_training_episodes-1:
+        eval_episodes.append(ep)
         eval_reward_hists = []
         for _ in range(n_eval):
             eval_reward_hist = eval_episode(env, algo, max_cycles)
@@ -183,10 +184,11 @@ for eval_hist in eval_hists:
 # plot eval info
 for a, agent in enumerate(algo.agents.keys()):
     # TODO: Breaks when max_training_episodes is not divisible by eval_every
-    plt.errorbar(range(len(eval_means[agent])), eval_means[agent], yerr=eval_stds[agent], label=f"{agent} mean")
+    plt.errorbar(eval_episodes, eval_means[agent], yerr=eval_stds[agent], label=f"{agent} mean", capsize=5, marker="x")
 
-plt.errorbar(range(len(eval_means[agent])), eval_means["mean"], yerr=eval_stds["mean"], label="mean", color="black", linestyle="--")
+plt.errorbar(eval_episodes, eval_means["mean"], yerr=eval_stds["mean"], label="mean", color="black", linestyle="--", capsize=5, marker="x")
 
+# plt.xticks(eval_episodes)
 plt.xlabel("Episode")
 plt.ylabel("Mean Reward")
 plt.title(f"{algo_name} on {env_name} (evaluation)")

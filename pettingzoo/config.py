@@ -48,6 +48,12 @@ parser.add_argument("--shield_alpha",
                     help="Alpha value for shield."
                     )
 
+parser.add_argument("--shield_file",
+                    type=str,
+                    default="default",
+                    help="Shield file to use."
+                    )
+
 # Model params, common to all algorithms
 parser.add_argument("--update_timestep",
                     type=int,

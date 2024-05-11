@@ -10,12 +10,19 @@ class ShieldSelector:
 
         assert filename or (n_actions and n_sensors), "Either filename or (n_actions and n_sensors) must be provided."
 
-        if filename:
+        if filename != "" and filename != "default":
             print("Using provided filename as shield program.")
             self.file = filename
+        
+        if filename == "default":
+            if env_name == "simple_stag_v0":
+                self.file = "simple_stag_v0/shield_v0.pl"
 
-        else:
-            self.file = f"{env_name}/shield_a{n_actions}_s{n_sensors}.pl"
+            elif env_name == "simple_pd_v0":
+                self.file = "simple_pd_v0/shield_v0.pl"
+
+            elif env_name == "waterworld":
+                raise NotImplementedError("Shield program for Waterworld not implemented yet.")
 
         self.verify()
 
