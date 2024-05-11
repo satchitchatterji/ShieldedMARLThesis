@@ -1,6 +1,19 @@
 import torch
 import numpy as np
 
+class IdentitySensorWrapper:
+    """
+    Sensor wrapper for the PettingZoo environments. 
+    """
+    def __init__(self, env, num_sensors=None):
+        self.env = env
+        if num_sensors is not None:
+            self.num_sensors = num_sensors
+        else:
+            self.num_sensors = env.observation_spaces[env.agents[0]].shape[0]
+    
+    def __call__(self, x):
+        return x
 class WaterworldSensorWrapper:
     """
     Sensor wrapper for the Waterworld environment. 

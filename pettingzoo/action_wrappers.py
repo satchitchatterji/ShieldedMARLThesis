@@ -1,5 +1,15 @@
 import numpy as np
 
+
+class IdentityActionWrapper:
+    """
+    Default action wrapper for PettingZoo environments.
+    """
+    def __init__(self, num_actions):
+        self.num_actions = num_actions
+
+    def __call__(self, action):
+        return action
 class WaterworldActionWrapper:
     """
     Wrapper for the Waterworld environment's action space.
