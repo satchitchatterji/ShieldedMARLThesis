@@ -311,6 +311,14 @@ class DQNShielded(object):
         return loss
         ###############################################################
 
+    def get_action_probs(self, state):
+        with torch.no_grad():
+            state = torch.Tensor(state).to(self.device)
+            Q_values = self.calc_action_values(state.unsqueeze(0)).squeeze(0).detach()
+            # softmax q vals
+            Q_values_norm = torch.exp(Q_values) / torch.sum(torch.exp(Q_values))
+            # TODO: epsilon-greedy probability instead of softmax?
+        return Q_values_norm
 
     def train_model(self):
         """ Train the MLP function approximator using experience replay """

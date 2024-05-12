@@ -135,7 +135,6 @@ class ActorCriticShielded(nn.Module):
 
                 log_prob = distribution.log_prob(actions)
 
-
         state_val = self.critic(state)           # values
 
         return actions.detach(), log_prob.detach(), state_val.detach()
@@ -268,6 +267,12 @@ class PPOShielded:
             self.buffer.state_values.append(state_val)
 
         return action.item()
+
+    def get_action_probs(self, state):
+        with torch.no_grad():
+            state = torch.FloatTensor(state).to(self.device)
+            action_probs = self.policy_old.actor(state)
+        return action_probs
 
     def update(self):
         # Monte Carlo estimate of returns

@@ -11,6 +11,8 @@ from .acsppo import ACSPPO
 from .sacsppo import SACSPPO
 from .base import BaseMARLAlgo
 
+from .safety_calculator import SafetyCalculator
+
 classes = [
     "IQL",
     "SIQL",
@@ -22,9 +24,9 @@ classes = [
     "SMAPPO",
     "ACSPPO",
     "SACSPPO",
-    "BaseMARLAlgo"
+    "BaseMARLAlgo",
+    "SafetyCalculator"
 ]
-
 
 SHIELDED_ALGOS = {
     "SIQL": SIQL, 

@@ -45,8 +45,6 @@ if hasattr(env.observation_space(env.possible_agents[0]), "shape") and len(env.o
 else: 
     observation_space = env.observation_space(env.possible_agents[0]).n         # for discrete spaces?
 
-print(n_discrete_actions, observation_space)
-
 action_wrapper = action_wrappers.IdentityActionWrapper(n_discrete_actions)
 # sensor_wrapper = sensor_wrappers.IdentitySensorWrapper(env, observation_space)
 sensor_wrapper = sensor_wrappers.MarkovStagHuntSensorWrapper(env, observation_space)
@@ -66,6 +64,8 @@ sh_params = {
     "observation_type": "ground truth",
     "get_sensor_value_ground_truth": sensor_wrapper,
 }
+
+print(sh_params)
 
 # sh_params = None
 ppo_params = ["update_timestep", "train_epochs", "gamma", "eps_clip", "lr_actor", "lr_critic"]
@@ -93,10 +93,15 @@ algo = ALL_ALGORITHMS[algo_name](env=env,
                                  alpha=alpha
                                  )
 
+############################################ SAFETY CALC ############################################
+
+safety_calc = SafetyCalculator(sh_params)
+
 ############################################ TRAINING ############################################
 
 reward_hists = []
 eval_hists = []
+eval_safeties = []
 eval_episodes = []
 wandb.init(project=f"{system}_{env_name}", name=f"{algo_name}_{cur_time}", config=vars(config))
 
@@ -108,10 +113,13 @@ for _ in range(max_training_episodes):
     if ep % eval_every == 0 or ep == max_training_episodes-1:
         eval_episodes.append(ep)
         eval_reward_hists = []
+        eval_safety_hists = []
         for _ in range(n_eval):
-            eval_reward_hist = eval_episode(env, algo, max_cycles)
+            eval_reward_hist, eval_safety_hist = eval_episode(env, algo, max_cycles, safety_calculator=safety_calc)
             eval_reward_hists.append(eval_reward_hist)
+            eval_safety_hists.append(eval_safety_hist)
         eval_hists.append(eval_reward_hists)
+        eval_safeties.append(eval_safety_hists)
 
         algo.save(f"models/{env_name}/{algo_name}_{cur_time}/ep{ep}")
 
@@ -137,6 +145,11 @@ if not os.path.exists(f"histories/{env_name}/{algo_name}/{cur_time}_eval.pk"):
     os.makedirs(f"histories/{env_name}/{algo_name}", exist_ok=True)
 with open(f"histories/{env_name}/{algo_name}/{cur_time}_eval.pk", "wb") as f:
     pk.dump(eval_hists, f)
+
+if not os.path.exists(f"histories/{env_name}/{algo_name}/{cur_time}_safety.pk"):
+    os.makedirs(f"histories/{env_name}/{algo_name}", exist_ok=True)
+with open(f"histories/{env_name}/{algo_name}/{cur_time}_safety.pk", "wb") as f:
+    pk.dump(eval_safeties, f)
 
 print("Training complete. Fileref:", cur_time)
 # safe config dict to json file
@@ -185,7 +198,6 @@ for eval_hist in eval_hists:
 
 # plot eval info
 for a, agent in enumerate(algo.agents.keys()):
-    # TODO: Breaks when max_training_episodes is not divisible by eval_every
     plt.errorbar(eval_episodes, eval_means[agent], yerr=eval_stds[agent], label=f"{agent} mean", capsize=5, marker="x")
 
 plt.errorbar(eval_episodes, eval_means["mean"], yerr=eval_stds["mean"], label="mean", color="black", linestyle="--", capsize=5, marker="x")
@@ -197,6 +209,40 @@ plt.title(f"{algo_name} on {env_name} (evaluation)")
 plt.grid(True)
 plt.legend()
 plt.savefig(f"plots/{env_name}/{algo_name}/{cur_time}_eval.png")
+
+plt.clf()
+# plot safety info
+# compute eval means and stds
+eval_means = {}
+eval_stds = {}
+
+for a, agent in enumerate(algo.agents.keys()):
+    eval_means[agent] = []
+    eval_stds[agent] = []
+    for eval_hist in eval_safeties:
+        eval_means[agent].append(np.mean([np.mean(eval_reward_hist[agent]) for eval_reward_hist in eval_hist]))
+        eval_stds[agent].append(np.std([np.mean(eval_reward_hist[agent]) for eval_reward_hist in eval_hist]))
+
+# compute overall mean and std
+eval_means["mean"] = []
+eval_stds["mean"] = []
+for eval_hist in eval_safeties:
+    eval_means["mean"].append(np.mean([np.mean([np.mean(eval_reward_hist[agent]) for agent in eval_reward_hist.keys()]) for eval_reward_hist in eval_hist]))
+    eval_stds["mean"].append(np.std([np.mean([np.mean(eval_reward_hist[agent]) for agent in eval_reward_hist.keys()]) for eval_reward_hist in eval_hist]))
+
+# plot eval info
+for a, agent in enumerate(algo.agents.keys()):
+    plt.errorbar(eval_episodes, eval_means[agent], yerr=eval_stds[agent], label=f"{agent} mean", capsize=5, marker="x")
+
+plt.errorbar(eval_episodes, eval_means["mean"], yerr=eval_stds["mean"], label="mean", color="black", linestyle="--", capsize=5, marker="x")
+
+# plt.xticks(eval_episodes)
+plt.xlabel("Episode")
+plt.ylabel("Mean Reward")
+plt.title(f"{algo_name} on {env_name} (safety evaluations)")
+plt.grid(True)
+plt.legend()
+plt.savefig(f"plots/{env_name}/{algo_name}/{cur_time}_safeties.png")
 
 # plt.show()
 exit()
