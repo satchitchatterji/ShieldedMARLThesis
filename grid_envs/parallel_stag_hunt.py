@@ -97,6 +97,7 @@ class parallel_env(ParallelEnv):
         self.max_cycles = max_cycles
         self.flatten_observation = flatten_observation
         self.one_hot_observations = one_hot_observations
+        self.results = {"stag":0, "plant":0, "stag_pen":0}
 
     # Observation space should be defined here.
     # lru_cache allows observation and action spaces to be memoized, reducing clock cycles required to get each agent's space.
@@ -253,6 +254,7 @@ class parallel_env(ParallelEnv):
             if old_grid[self.agent_positions[a]] == PLANT:
                 rewards[a] += PLANT_REWARD
                 self.grid[self.agent_positions[a]] = NOTHING
+                self.results["plant"] += 1
 
         # # check if both agents are on stag
         # if all([old_grid[self.agent_positions[a]] == STAG for a in self.agents]):
@@ -270,8 +272,10 @@ class parallel_env(ParallelEnv):
                         break
                 if stag_alone:
                     rewards[a] -= STAG_PENALTY
+                    self.results["stag_pen"] += 1
                 else:
                     rewards[a] += STAG_REWARD
+                    self.results["stag"] += 1
                 self.grid[self.agent_positions[a]] = NOTHING
         
         for a in self.agents:
@@ -291,8 +295,6 @@ class parallel_env(ParallelEnv):
         # regenerate plants and stag if they were eaten
         if np.sum(self.grid == PLANT) < 2 or np.sum(self.grid == STAG) < 1:
             self.generate_plants_and_stag()
-
-
 
         return rewards
 
@@ -334,6 +336,7 @@ class parallel_env(ParallelEnv):
         hands that are played.
         Returns the observations for each agent
         """
+        self.results = {"stag":0, "plant":0, "stag_pen":0}
         self.agents = self.possible_agents[:]
         self.num_moves = 0
         self.plant_positions = []
@@ -372,6 +375,8 @@ class parallel_env(ParallelEnv):
 
         self.num_moves += 1
         env_truncation = self.num_moves >= self.max_cycles
+        if env_truncation:
+            print(self.results)
         truncations = {agent: env_truncation for agent in self.agents}
         observations = {agent: self.process_obs(self.grid, agent) for agent in self.agents}
         self.state = self.grid

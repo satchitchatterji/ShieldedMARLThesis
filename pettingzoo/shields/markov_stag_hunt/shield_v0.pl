@@ -21,11 +21,15 @@ hunt :- action(down), sensor(stag_down), stag_surrounded.
 
 % run away from stag if it is near and there is no other agent
 stag_alone :- sensor(stag_near_self), \+sensor(stag_near_other).
-unsafe_next :- action(left), sensor(stag_left), stag_alone.
-unsafe_next :- action(right), sensor(stag_right), stag_alone.
-unsafe_next :- action(up), sensor(stag_up), stag_alone.
-unsafe_next :- action(down), sensor(stag_down), stag_alone.
-unsafe_next :- action(stay), stag_alone.
+run_away :- action(left), sensor(stag_left), stag_alone.
+run_away :- action(right), sensor(stag_right), stag_alone.
+run_away :- action(up), sensor(stag_up), stag_alone.
+run_away :- action(down), sensor(stag_down), stag_alone.
+run_away :- action(stay), stag_alone.
 
-safe_next:- hunt.
-safe_next:- \+unsafe_next.
+safe_next :- hunt.
+safe_next :- run_away. 
+% any action is safe if a stag is not near
+safe_next:- action(_), \+sensor(stag_near_self).
+% unsafe_next:- \+hunt.
+% safe_next:- \+unsafe_next.
