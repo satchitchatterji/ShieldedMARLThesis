@@ -20,19 +20,19 @@ parser.add_argument("--env",
 
 parser.add_argument("--max_cycles",
                     type=int,
-                    default=100,
+                    default=25,
                     help="Number of cycles to run each environment episode for."
                     )
 
 parser.add_argument("--max_eps",
                     type=int,
-                    default=100,
+                    default=10,
                     help="Number of episodes to train for."
                     )
 
 parser.add_argument("--eval_every",
                     type=int,
-                    default=10,
+                    default=3,
                     help="Number of episodes between evaluations."
                     )
 
@@ -57,13 +57,13 @@ parser.add_argument("--shield_file",
 # Model params, common to all algorithms
 parser.add_argument("--update_timestep",
                     type=int,
-                    default=25,
+                    default=5,
                     help="Update policy (PPO) / target network (DQN) every n timesteps."
                     )
 
 parser.add_argument("--train_epochs",                                     
                     type=int,
-                    default=50,
+                    default=10,
                     help="Train policy/Q network for K epochs in one PPO/DQN update."
                     )
 
@@ -76,7 +76,7 @@ parser.add_argument("--gamma",
 # PPO Params
 parser.add_argument("--eps_clip",
                     type=float,
-                    default=0.2,
+                    default=0.1,
                     help="(PPO) Clip parameter for PPO."
                     )
 
@@ -96,7 +96,7 @@ parser.add_argument("--lr_critic",
 # DQN Params
 parser.add_argument("--buffer_size",
                     type=int,
-                    default=10000,
+                    default=1000,
                     help="(DQN) Size of the replay buffer."
                     )
 
@@ -120,7 +120,7 @@ parser.add_argument("--tau",
 
 parser.add_argument("--target_update_type",
                     type=str,
-                    default="soft",
+                    default="hard",
                     help="(DQN) Type of update to use. Options are 'soft' and 'hard'."
                     )
 
