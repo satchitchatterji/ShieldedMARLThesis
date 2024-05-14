@@ -4,6 +4,17 @@ import sys
 sys.path.append("../grid_envs")
 import parallel_stag_hunt as psh
 
+def get_wrapper(env):
+    wrappers = {
+        "waterworld": WaterworldSensorWrapper,
+        "simple_stag_v0": IdentitySensorWrapper,
+        "markov_stag_hunt": MarkovStagHuntSensorWrapper
+    }
+    if env in wrappers.keys():
+        return wrappers[env]
+    else:
+        raise NotImplementedError(f"Sensor wrapper for {env} not implemented.")
+
 class IdentitySensorWrapper:
     """
     Sensor wrapper for the PettingZoo environments. 
