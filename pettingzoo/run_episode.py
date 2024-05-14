@@ -3,6 +3,7 @@ import wandb
 import time
 from tqdm import trange
 from algos import BaseMARLAlgo
+import torch
 
 ############################################ RUN EPISODE ############################################
 
@@ -45,7 +46,7 @@ def eval_episode(env, algo, max_cycles, ep=0, safety_calculator=None, save_wandb
     observations, infos = env.reset()
 
     algo.eval(True)
-
+    stag_chances = 0
     for step in range(max_cycles):
 
         if len(env.agents) == 0:
@@ -54,6 +55,11 @@ def eval_episode(env, algo, max_cycles, ep=0, safety_calculator=None, save_wandb
         obs_old = observations
         actions = algo.act(observations)
         observations, rewards, terminations, truncations, infos = env.step(actions)
+
+        if env.metadata["name"] == "markov_stag_hunt":
+            for agent in algo.agents.keys():
+                processed = algo.agents[agent].policy.get_sensor_value_ground_truth(torch.FloatTensor(obs_old[agent]))
+                stag_chances += processed[-1] and processed[-2]
 
         for agent in algo.agents.keys():
             if agent not in reward_hist:
@@ -83,4 +89,7 @@ def eval_episode(env, algo, max_cycles, ep=0, safety_calculator=None, save_wandb
 
     algo.eval(False)
 
+    if env.metadata["name"] == "markov_stag_hunt":
+        print("stag_chances", int(stag_chances.item()/2))
+    
     return reward_hist, safety_hist
