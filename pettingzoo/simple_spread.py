@@ -47,12 +47,13 @@ else:
 
 action_wrapper = action_wrappers.IdentityActionWrapper(n_discrete_actions)
 # sensor_wrapper = sensor_wrappers.IdentitySensorWrapper(env, observation_space)
-sensor_wrapper = sensor_wrappers.MarkovStagHuntSensorWrapper(env, observation_space)
+sensor_wrapper = sensor_wrappers.get_wrapper(env_name)(env, observation_space)
 
 shield_selector = ShieldSelector(env_name=env_name, 
                                  n_actions=action_wrapper.num_actions, 
                                  n_sensors=sensor_wrapper.num_sensors,
-                                 filename=config.shield_file
+                                 filename=config.shield_file,
+                                 version=config.shield_version
                                  )
 
 sh_params = {

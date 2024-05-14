@@ -1,7 +1,7 @@
 import os
 
 class ShieldSelector:
-    def __init__(self, env_name, n_actions=None, n_sensors=None, filename = ""):
+    def __init__(self, env_name, n_actions=None, n_sensors=None, filename = "", version=0):
         
         self.base_dir = "shields"
         self.env_name = env_name
@@ -13,19 +13,19 @@ class ShieldSelector:
         if filename != "" and filename != "default":
             print("Using provided filename as shield program.")
             self.file = filename
-        
+
         if filename == "default":
             if env_name == "simple_stag_v0":
-                self.file = "simple_stag_v0/shield_v0.pl"
+                self.file = f"simple_stag_v0/shield_v{version}.pl"
 
             elif env_name == "simple_pd_v0":
-                self.file = "simple_pd_v0/shield_v0.pl"
+                self.file = f"simple_pd_v0/shield_v{version}.pl"
 
             elif env_name == "markov_stag_hunt":
-                self.file = "markov_stag_hunt/shield_v0.pl"
+                self.file = f"markov_stag_hunt/shield_v{version}.pl"
 
             elif env_name == "waterworld":
-                raise NotImplementedError("Shield program for Waterworld not implemented yet.")
+                raise NotImplementedError("Shield program for Waterworld not implemented/not recommended.")
 
         self.verify()
 
