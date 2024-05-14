@@ -26,7 +26,7 @@ parser.add_argument("--max_cycles",
 
 parser.add_argument("--max_eps",
                     type=int,
-                    default=10,
+                    default=20,
                     help="Number of episodes to train for."
                     )
 
@@ -52,6 +52,12 @@ parser.add_argument("--shield_file",
                     type=str,
                     default="default",
                     help="Shield file to use."
+                    )
+
+parser.add_argument("--shield_version",
+                    type=int,
+                    default=0,
+                    help="Version of shield to use for a given env."
                     )
 
 # Model params, common to all algorithms
