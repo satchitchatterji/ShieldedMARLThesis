@@ -30,7 +30,7 @@ STAG = 4
 
 # rewards
 PLANT_REWARD = 2
-STAG_REWARD = 100
+STAG_REWARD = 10
 STAG_PENALTY = 2
 
 # observation types for agents
