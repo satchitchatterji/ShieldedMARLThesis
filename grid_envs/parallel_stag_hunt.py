@@ -17,7 +17,7 @@ STAY = 4
 MOVES = [LEFT, RIGHT, UP, DOWN, STAY]
 
 # board params
-STAG_MOVE_PROB = 0.8
+STAG_MOVE_PROB = 0.75
 NUM_ITERS = 10
 GRID_SIZE = (5, 5)
 
@@ -267,7 +267,7 @@ class parallel_env(ParallelEnv):
             if old_grid[self.agent_positions[a]] == STAG:
                 stag_alone = True
                 for a2 in self.agents:
-                    if a2 != a and old_grid[self.agent_positions[a2]] == STAG:
+                    if a2 != a and self.agent_positions[a2] == self.agent_positions[a]:
                         stag_alone = False
                         break
                 if stag_alone:

@@ -13,3 +13,23 @@ shield_v1.pl:
     - interpretation of rules:
         - never hunt stag if it is near
         - all actions are fine if stag is not near
+
+shield_v2.pl:
+    - actions = 5
+    - states = 6
+    - sensor_wrapper = MarkovStagHuntSensorWrapper::stag_surrounded
+    - interpretation of rules:
+
+shield_v3.pl:
+    - actions = 5
+    - states = 6
+    - sensor_wrapper = MarkovStagHuntSensorWrapper::stag_surrounded
+    - interpretation of rules:
+        - always hunt stag
+
+shield_v3.pl:
+    - actions = 5
+    - states = 6
+    - sensor_wrapper = MarkovStagHuntSensorWrapper::stag_surrounded
+    - interpretation of rules:
+        - never hunt stag 

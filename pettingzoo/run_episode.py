@@ -4,6 +4,8 @@ import time
 from tqdm import trange
 from algos import BaseMARLAlgo
 import torch
+import pprint 
+pp = pprint.PrettyPrinter(indent=4)
 
 ############################################ RUN EPISODE ############################################
 
@@ -73,23 +75,24 @@ def eval_episode(env, algo, max_cycles, ep=0, safety_calculator=None, save_wandb
                     safety_hist[agent] = []
                 safety_hist[agent].append(safeties[agent])
 
-    if save_wandb:
-        update_dict = {}
-        # mean reward per agent
-        update_dict.update({f"eval_mean_reward_{agent}": np.mean(reward_hist[agent]) for agent in reward_hist})
-        # mean reward overall
-        update_dict.update({"eval_mean_reward": np.mean([np.mean(reward_hist[agent]) for agent in reward_hist])})
-        # mean safety per agent
-        if safety_calculator is not None:
-            update_dict.update({f"eval_mean_safety_{agent}": np.mean(safety_hist[agent]) for agent in safety_hist})
-            # mean safety overall
-            update_dict.update({"eval_mean_safety": np.mean([np.mean(safety_hist[agent]) for agent in safety_hist])})
+    update_dict = {}
+    # mean reward per agent
+    update_dict.update({f"eval_mean_reward_{agent}": np.mean(reward_hist[agent]) for agent in reward_hist})
+    # mean reward overall
+    update_dict.update({"eval_mean_reward": np.mean([np.mean(reward_hist[agent]) for agent in reward_hist])})
+    # mean safety per agent
+    if safety_calculator is not None:
+        update_dict.update({f"eval_mean_safety_{agent}": np.mean(safety_hist[agent]) for agent in safety_hist})
+        # mean safety overall
+        update_dict.update({"eval_mean_safety": np.mean([np.mean(safety_hist[agent]) for agent in safety_hist])})
 
+    if save_wandb:
         wandb.log(update_dict)
+    if env.metadata["name"] == "markov_stag_hunt":
+        print("stag_chances", int(stag_chances.item()/2))
+        pp.pprint(update_dict)
 
     algo.eval(False)
 
-    if env.metadata["name"] == "markov_stag_hunt":
-        print("stag_chances", int(stag_chances.item()/2))
     
     return reward_hist, safety_hist

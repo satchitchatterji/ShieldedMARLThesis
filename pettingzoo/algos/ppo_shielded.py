@@ -79,14 +79,13 @@ class ActorCriticShielded(nn.Module):
     def get_shielded_policy_batch_agnostic(self, base_actions, sensor_values):
         if self.shield is None:
             raise NotImplementedError("Shielded policy is only supported with a shield.")
-        
+    
         # single item batch
         if len(sensor_values.shape) == 1:
             return self.shield.get_shielded_policy(base_actions.unsqueeze(0), sensor_values.unsqueeze(0)).squeeze(0)
-        
         # batch
         return self.shield.get_shielded_policy(base_actions, sensor_values)
-
+    
     def act(self, state, deterministic=False):
 
         base_actions = self.actor(state)    # base_actions
@@ -140,7 +139,6 @@ class ActorCriticShielded(nn.Module):
         return actions.detach(), log_prob.detach(), state_val.detach()
     
     def evaluate(self, state, action):
-
         action_probs = self.actor(state)
         distribution = Categorical(action_probs)
         # base_actions = self.get_actions(distribution, deterministic=False)
