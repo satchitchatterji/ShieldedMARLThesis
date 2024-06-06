@@ -35,6 +35,8 @@ class DQNShielded(object):
                  update_timestep=25,
                  tau=0.01,
                  update_target_type='soft',
+                 explore_policy='e_greedy',
+                 eval_policy='greedy',
                  **kwargs # made to be compatible with PPO
                  ):
 
@@ -65,6 +67,8 @@ class DQNShielded(object):
         self.epsilon = 1.0
         self.epsilon_decay = eps_decay
         self.epsilon_min = eps_min
+        self.explore_policy = explore_policy
+        self.eval_policy = eval_policy
 
         self.gamma = gamma
         self.learning_rate = lr
@@ -179,6 +183,22 @@ class DQNShielded(object):
         else:
             return np.argmax(Q_values.detach().cpu().numpy())
 
+    def e_greedy_policy(self, Q_values):
+        """ Return the epsilon-greedy policy for a given state in the form of a tensor of probabilities """
+        eps = self.epsilon
+        if self.eval_mode:
+            eps = 0
+        n_actions = len(Q_values)
+        probs = torch.ones(n_actions) * eps / n_actions
+        best_action = torch.argmax(Q_values)
+        probs[best_action] += 1 - eps
+        return probs
+
+    def softmax_policy(self, Q_values):
+        """ Return the softmax policy for a given state in the form of a tensor of probabilities """
+        n_actions = len(Q_values)
+        return torch.exp(Q_values) / torch.sum(torch.exp(Q_values))
+
     def act(self, states):
         """ Choose an action for each agent, given the current state """
 
@@ -250,15 +270,24 @@ class DQNShielded(object):
         Q_values = self.calc_action_values(state.unsqueeze(0)).squeeze(0).detach()
 
         # softmax q vals
-        Q_values_norm = torch.exp(Q_values) / torch.sum(torch.exp(Q_values))
-        shielded_policy = self.get_shielded_action(state, Q_values_norm).squeeze(0).to(self.device)
+        if self.eval_mode == False:
+            if self.explore_policy == 'softmax':
+                Q_values_norm = self.softmax_policy(Q_values)
+            elif self.explore_policy == 'e_greedy':
+                Q_values_norm = self.e_greedy_policy(Q_values)
+        else:
+            if self.eval_policy == 'softmax':
+                Q_values_norm = self.softmax_policy(Q_values)
+            elif self.eval_policy == 'greedy':
+                Q_values_norm = torch.zeros(self.num_actions)
+                Q_values_norm[torch.argmax(Q_values)] = 1
 
-        # self.debug_info =
-        action = self.e_greedy(shielded_policy)
-        # print("State: ", state)
-        # print("Q_values: ", Q_values)
-        # print("Q_values_norm: ", Q_values_norm)
-        # print("Shielded policy: ", shielded_policy)
+        # TODO: See if we can use the shielded policy for evaluation as well
+        if self.eval_mode:
+            shielded_policy = Q_values_norm
+        else:
+            shielded_policy = self.get_shielded_action(state, Q_values_norm).squeeze(0).to(self.device)
+        action = self.random_action(np.array(shielded_policy))
 
         if self.training:
             # update epsilon

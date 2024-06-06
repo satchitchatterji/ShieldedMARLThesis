@@ -26,13 +26,13 @@ parser.add_argument("--max_cycles",
 
 parser.add_argument("--max_eps",
                     type=int,
-                    default=20,
+                    default=500,
                     help="Number of episodes to train for."
                     )
 
 parser.add_argument("--eval_every",
                     type=int,
-                    default=3,
+                    default=50,
                     help="Number of episodes between evaluations."
                     )
 
@@ -140,6 +140,18 @@ parser.add_argument("--eps_decay",
                     type=float,
                     default=0.995,
                     help="(DQN) Decay rate for epsilon."
+                    )
+
+parser.add_argument("--explore_policy",
+                    type=str,
+                    default="e_greedy",
+                    help="Exploration strategy to use. Options are 'e_greedy' and 'softmax'."
+                    )
+
+parser.add_argument("--eval_policy",
+                    type=str,
+                    default="greedy",
+                    help="Exploitation strategy to use. Options are 'greedy' and 'softmax'."
                     )
 
 
