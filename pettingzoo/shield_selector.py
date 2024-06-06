@@ -1,4 +1,5 @@
 import os
+from env_selection import ALL_ENVS
 
 class ShieldSelector:
     def __init__(self, env_name, n_actions=None, n_sensors=None, filename = "", version=0):
@@ -14,18 +15,10 @@ class ShieldSelector:
             print("Using provided filename as shield program.")
             self.file = filename
 
+        supported_envs = ALL_ENVS.keys()
+        assert env_name in supported_envs, f"Shield program for {env_name} not supported."
         if filename == "default":
-            if env_name == "simple_stag_v0":
-                self.file = f"simple_stag_v0/shield_v{version}.pl"
-
-            elif env_name == "simple_pd_v0":
-                self.file = f"simple_pd_v0/shield_v{version}.pl"
-
-            elif env_name == "markov_stag_hunt":
-                self.file = f"markov_stag_hunt/shield_v{version}.pl"
-
-            elif env_name == "waterworld":
-                raise NotImplementedError("Shield program for Waterworld not implemented/not recommended.")
+            self.file = f"{env_name}/shield_v{version}.pl"
 
         self.verify()
 

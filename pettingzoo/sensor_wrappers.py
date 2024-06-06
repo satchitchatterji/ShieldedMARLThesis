@@ -8,7 +8,10 @@ def get_wrapper(env):
     wrappers = {
         "waterworld": WaterworldSensorWrapper,
         "simple_stag_v0": IdentitySensorWrapper,
-        "markov_stag_hunt": MarkovStagHuntSensorWrapper
+        "markov_stag_hunt": MarkovStagHuntSensorWrapper,
+        "centipede": IdentitySensorWrapper,
+        "publicgoods": PublicGoodsSensorWrapper,
+        "publicgoodsmany": PublicGoodsSensorWrapper
     }
     if env in wrappers.keys():
         return wrappers[env]
@@ -28,7 +31,56 @@ class IdentitySensorWrapper:
     
     def __call__(self, x):
         return x
+    
+class PublicGoodsSensorWrapper:
+    """
+    Sensor wrapper for the Public Goods Game environment. 
+    """
+    def __init__(self, env, num_sensors=None):
+        self.env = env
+        self.num_sensors = num_sensors
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        if env.observe_f:
+            self.translation_func = self.obs_with_f
+        else:
+            self.translation_func = self.obs_without_f
+            
+        self._reset_values()
 
+    def _reset_values(self):
+        self.values_low = None
+        self.values_high = None
+
+    def obs_without_f(self, obs):
+        return obs
+    
+    def obs_with_f(self, obs):
+        if self.env.num_moves == 0:
+            self._reset_values()
+        obs = obs.cpu().numpy()
+        agent_other = obs[:-1]
+        mult = obs[-1]
+        if self.values_low is None:
+            self.values_low = mult
+            self.values_high = mult
+        else:
+            
+            self.values_low = min(mult, self.values_low)
+            self.values_high = max(mult, self.values_high)
+        
+        if self.values_high == self.values_low:
+            mult = 0.5
+        else:
+            mult = (mult - self.values_low) / (self.values_high - self.values_low)
+        
+        return torch.tensor(np.append(agent_other, mult).astype(np.float32), dtype=torch.float32, device=self.device)
+    
+    def __call__(self, x):
+        # TODO: batch processing
+        if len(x.shape) == 1:
+            return self.translation_func(x)
+        else:
+            return torch.stack([self.translation_func(x[i]) for i in range(x.shape[0])])
 class MarkovStagHuntSensorWrapper:
 
     def __init__(self, env, num_sensors=None):
