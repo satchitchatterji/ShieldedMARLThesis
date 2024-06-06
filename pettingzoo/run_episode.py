@@ -41,7 +41,7 @@ def run_episode(env, algo, max_cycles, ep=0):
 
 ############################################ EVALUATION ############################################
 
-def eval_episode(env, algo, max_cycles, ep=0, safety_calculator=None, save_wandb=False):
+def eval_episode(env, algo, max_cycles, ep=0, safety_calculator=None, save_wandb=True):
     assert issubclass(type(algo), BaseMARLAlgo), "algo must be an instance of BaseMARLAlgo"
     reward_hist = {}
     safety_hist = {}
