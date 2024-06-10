@@ -8,6 +8,8 @@ def get_wrapper(env):
     wrappers = {
         "waterworld": WaterworldSensorWrapper,
         "simple_stag_v0": IdentitySensorWrapper,
+        "simple_pd_v0": IdentitySensorWrapper,
+        "simple_chicken_v0": IdentitySensorWrapper,
         "markov_stag_hunt": MarkovStagHuntSensorWrapper,
         "centipede": IdentitySensorWrapper,
         "publicgoods": PublicGoodsSensorWrapper,

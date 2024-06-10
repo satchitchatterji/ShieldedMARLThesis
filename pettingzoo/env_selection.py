@@ -18,7 +18,9 @@ from publicgoodsmany_env import parallel_env as public_goodsmany_env
 ALL_ENVS = {
     "simple_spread_v3": simple_spread_v3.parallel_env,
     "markov_stag_hunt": parallel_stag_hunt.parallel_env,
-    "nfg_stag_hunt": dilemma_parallel_env,
+    "simple_stag_v0": dilemma_parallel_env,
+    "simple_pd_v0": dilemma_parallel_env,
+    "simple_chicken_v0": dilemma_parallel_env,
     "centipede": centipede_env,
     "publicgoods": public_goods_env,
     "publicgoodsmany": public_goodsmany_env,
@@ -27,7 +29,9 @@ ALL_ENVS = {
 ALL_ENVS_ARGS = {
     "simple_spread_v3": {"N": 3, "local_ratio": 0.5, "continuous_actions": False},
     "markov_stag_hunt": {},
-    "nfg_stag_hunt": {"game": "stag", "num_actions": 2},
+    "simple_stag_v0": {"game": "stag", "num_actions": 2},
+    "simple_pd_v0": {"game": "pd", "num_actions": 2},
+    "simple_chicken_v0": {"game": "chicken", "num_actions": 2},
     "centipede": {"randomize_players": True, "growth_rate": 1},
     "publicgoods": {"initial_endowment": 10, "mult_factor": None, "observe_f": True, "rand_f_between": [0.1, 4]},
     "publicgoodsmany": {"n_agents":10, "initial_endowment": 10, "mult_factor": None, "observe_f": True, "rand_f_between": [10, 12]},
