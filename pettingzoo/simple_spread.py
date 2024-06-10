@@ -61,7 +61,8 @@ sh_params = {
     "config_folder": shield_selector.base_dir,
     "num_sensors": sensor_wrapper.num_sensors,
     "num_actions": action_wrapper.num_actions,
-    "differentiable": True,
+    "differentiable": config.shield_diff,
+    "vsrl_eps": config.shield_eps,
     "shield_program": shield_selector.file,
     "observation_type": "ground truth",
     "get_sensor_value_ground_truth": sensor_wrapper,
@@ -119,7 +120,8 @@ algo = ALL_ALGORITHMS[algo_name](env=env,
                                  sensor_wrapper=sensor_wrapper,
                                  sh_params=sh_params,
                                  algorithm_params=all_algo_params,
-                                 alpha=alpha
+                                 alpha=alpha,
+                                 shielded_ratio=config.shielded_ratio
                                  )
 
 ############################################ SAFETY CALC ############################################
