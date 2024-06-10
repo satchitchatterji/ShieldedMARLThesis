@@ -60,10 +60,28 @@ parser.add_argument("--shield_version",
                     help="Version of shield to use for a given env."
                     )
 
+parser.add_argument("--shielded_ratio",
+                    type=float,
+                    default=1.0,
+                    help="Ratio of shielded agents to unshielded (minimum)."
+                    )
+
+parser.add_argument("--shield_diff",
+                    type=bool,
+                    default=False,
+                    help="Whether to use differentiable shield (PLS vs VSRL)."
+                    )
+
+parser.add_argument("--shield_eps",
+                    type=float,
+                    default=0.1,
+                    help="Epsilon value for VSRL shield."
+                    )
+
 # Model params, common to all algorithms
 parser.add_argument("--update_timestep",
                     type=int,
-                    default=5,
+                    default=100,
                     help="Update policy (PPO) / target network (DQN) every n timesteps."
                     )
 

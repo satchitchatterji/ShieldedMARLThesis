@@ -10,7 +10,8 @@ class BaseMARLAlgo:
                  sensor_wrapper=None, 
                  sh_params=None, 
                  algorithm_params=None,
-                 alpha=None
+                 alpha=None,
+                 shielded_ratio=0.0
                  ):
         self.agents = {}
         self.env = env
@@ -21,6 +22,7 @@ class BaseMARLAlgo:
         self.sh_params = sh_params
         self.algorithm_params = algorithm_params
         self.alpha = alpha
+        self.shielded_ratio = shielded_ratio
         self.create_agents()
 
     @abstractmethod

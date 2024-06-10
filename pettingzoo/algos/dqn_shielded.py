@@ -196,7 +196,6 @@ class DQNShielded(object):
 
     def softmax_policy(self, Q_values):
         """ Return the softmax policy for a given state in the form of a tensor of probabilities """
-        n_actions = len(Q_values)
         return torch.exp(Q_values) / torch.sum(torch.exp(Q_values))
 
     def act(self, states):
@@ -267,27 +266,8 @@ class DQNShielded(object):
         
         state = torch.Tensor(state).to(self.device)
 
-        Q_values = self.calc_action_values(state.unsqueeze(0)).squeeze(0).detach()
-
-        # softmax q vals
-        if self.eval_mode == False:
-            if self.explore_policy == 'softmax':
-                Q_values_norm = self.softmax_policy(Q_values)
-            elif self.explore_policy == 'e_greedy':
-                Q_values_norm = self.e_greedy_policy(Q_values)
-        else:
-            if self.eval_policy == 'softmax':
-                Q_values_norm = self.softmax_policy(Q_values)
-            elif self.eval_policy == 'greedy':
-                Q_values_norm = torch.zeros(self.num_actions)
-                Q_values_norm[torch.argmax(Q_values)] = 1
-
-        # TODO: See if we can use the shielded policy for evaluation as well
-        if self.eval_mode:
-            shielded_policy = Q_values_norm
-        else:
-            shielded_policy = self.get_shielded_action(state, Q_values_norm).squeeze(0).to(self.device)
-        action = self.random_action(np.array(shielded_policy))
+        Q_values = self.get_action_probs(state)
+        action = self.random_action(np.array(Q_values))
 
         if self.training:
             # update epsilon
@@ -295,7 +275,7 @@ class DQNShielded(object):
             self.epsilon = max(self.epsilon, self.epsilon_min)
 
             # states, q_vals, action, reward, terminal, action_dist
-            self._temp_history = [state, Q_values, action, None, None, shielded_policy]
+            self._temp_history = [state, Q_values, action, None, None, Q_values]
 
         return self.controls[action]
 
@@ -339,15 +319,34 @@ class DQNShielded(object):
         loss = self.alpha * safety_loss
         return loss
         ###############################################################
-
+    
+    def normalize_Q_values(self, Q_values):
+        if not self.eval_mode:
+            if self.explore_policy == 'softmax':
+                Q_values_norm = self.softmax_policy(Q_values)
+            elif self.explore_policy == 'e_greedy':
+                Q_values_norm = self.e_greedy_policy(Q_values)
+        else:
+            if self.eval_policy == 'softmax':
+                Q_values_norm = self.softmax_policy(Q_values)
+            elif self.eval_policy == 'greedy':
+                Q_values_norm = torch.zeros(self.num_actions)
+                Q_values_norm[torch.argmax(Q_values)] = 1.0
+    
+        return Q_values_norm.to(self.device, dtype=torch.float32)
+    
     def get_action_probs(self, state):
         with torch.no_grad():
             state = torch.Tensor(state).to(self.device)
             Q_values = self.calc_action_values(state.unsqueeze(0)).squeeze(0).detach()
-            # softmax q vals
-            Q_values_norm = torch.exp(Q_values) / torch.sum(torch.exp(Q_values))
-            # TODO: epsilon-greedy probability instead of softmax?
-        return Q_values_norm
+            Q_values_norm = self.normalize_Q_values(Q_values)
+        
+        if self.eval_mode and self.eval_policy == 'greedy': # shield breaks if there's no safe actions
+            shielded_policy = Q_values_norm
+        else: 
+            shielded_policy = self.get_shielded_action(state, Q_values_norm).squeeze(0).to(self.device)
+
+        return shielded_policy
 
     def train_model(self):
         """ Train the MLP function approximator using experience replay """
@@ -412,6 +411,9 @@ class DQNShielded(object):
         if self.save_debug_info:
             with open(filename + "_debug_info.txt", 'w') as f:
                 f.write(str(self.debug_info_history))
+
+    def ignore_shield(self):
+        self.shield = None
 
     def set_eval_mode(self, bool_val):
         """ Set the agent to evaluation mode """
