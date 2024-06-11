@@ -6,6 +6,8 @@ from pls.shields.shields import Shield
 from torch.distributions import Categorical
 import torch
 
+from .utils import compute_eps_min_timestep
+
 # Used as keys for the agent's memory
 STATE = 0
 Q_VALS = 1
@@ -112,6 +114,8 @@ class DQNShielded(object):
         self.debug_info_history = []
         self.loss_info = []
         self.save_debug_info = False
+        if self.explore_policy == 'e_greedy':
+            print("Epsilon min will be reached at timestep:", compute_eps_min_timestep(1.0, eps_min, eps_decay))
 
         self._setup()
 
@@ -326,12 +330,16 @@ class DQNShielded(object):
                 Q_values_norm = self.softmax_policy(Q_values)
             elif self.explore_policy == 'e_greedy':
                 Q_values_norm = self.e_greedy_policy(Q_values)
+            else:
+                raise ValueError(f"Invalid explore_policy {self.explore_policy}")
         else:
             if self.eval_policy == 'softmax':
                 Q_values_norm = self.softmax_policy(Q_values)
             elif self.eval_policy == 'greedy':
                 Q_values_norm = torch.zeros(self.num_actions)
                 Q_values_norm[torch.argmax(Q_values)] = 1.0
+            else:
+                raise ValueError(f"Invalid eval_policy {self.eval_policy}")
     
         return Q_values_norm.to(self.device, dtype=torch.float32)
     
