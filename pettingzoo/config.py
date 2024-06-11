@@ -68,7 +68,7 @@ parser.add_argument("--shielded_ratio",
 
 parser.add_argument("--shield_diff",
                     type=bool,
-                    default=False,
+                    default=True,
                     help="Whether to use differentiable shield (PLS vs VSRL)."
                     )
 
