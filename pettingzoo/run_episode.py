@@ -18,7 +18,7 @@ def run_episode(env, algo, max_cycles, ep=0):
 
         if len(env.agents) == 0:
             break
-
+        
         actions = algo.act(observations)
         
         observations, rewards, terminations, truncations, infos = env.step(actions)

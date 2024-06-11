@@ -15,6 +15,9 @@ sys.path.append("../publicgoods")
 from publicgoods_env import parallel_env as public_goods_env
 from publicgoodsmany_env import parallel_env as public_goodsmany_env
 
+sys.path.append("../single_agent")
+from pz_wrapper import parallel_env as pz_wrapper_parallel_env
+
 ALL_ENVS = {
     "simple_spread_v3": simple_spread_v3.parallel_env,
     "markov_stag_hunt": parallel_stag_hunt.parallel_env,
@@ -24,6 +27,7 @@ ALL_ENVS = {
     "centipede": centipede_env,
     "publicgoods": public_goods_env,
     "publicgoodsmany": public_goodsmany_env,
+    "CartSafe-v0": pz_wrapper_parallel_env,
 }
 
 ALL_ENVS_ARGS = {
@@ -35,6 +39,7 @@ ALL_ENVS_ARGS = {
     "centipede": {"randomize_players": True, "growth_rate": 1},
     "publicgoods": {"initial_endowment": 10, "mult_factor": None, "observe_f": True, "rand_f_between": [0.1, 4]},
     "publicgoodsmany": {"n_agents":10, "initial_endowment": 10, "mult_factor": None, "observe_f": True, "rand_f_between": [10, 12]},
+    "CartSafe-v0": {"env_name": "CartSafe-v0"},
 }
 
 # To add a new env:

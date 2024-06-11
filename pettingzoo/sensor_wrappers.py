@@ -13,7 +13,8 @@ def get_wrapper(env):
         "markov_stag_hunt": MarkovStagHuntSensorWrapper,
         "centipede": IdentitySensorWrapper,
         "publicgoods": PublicGoodsSensorWrapper,
-        "publicgoodsmany": PublicGoodsSensorWrapper
+        "publicgoodsmany": PublicGoodsSensorWrapper,
+        "CartSafe-v0": CartSafeSensorWrapper,
     }
     if env in wrappers.keys():
         return wrappers[env]
@@ -83,6 +84,37 @@ class PublicGoodsSensorWrapper:
             return self.translation_func(x)
         else:
             return torch.stack([self.translation_func(x[i]) for i in range(x.shape[0])])
+
+class CartSafeSensorWrapper:
+    """
+    Sensor wrapper for the CartSafe environment. 
+    """
+    def __init__(self, env, num_sensors=None):
+        self.env = env
+        self.num_sensors = 4
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.translation_func = self.cart_safe_simple
+    
+    def cart_safe_simple(self, obs):
+        """
+        Returns normalized values of the agent's position and cost
+        """
+        obs = obs.cpu().numpy()
+        x = obs[0]
+
+        x_cost = np.abs(x) > self.env._env.x_constraint
+        x_pos = np.abs(obs[0])  / self.env._env.x_threshold
+        left = obs[0] < 0
+
+        return torch.tensor(np.array([x_cost, x_pos, left, 1-left], dtype=np.float32), dtype=torch.float32, device=self.device)
+
+    def __call__(self, x):
+        # TODO: batch processing
+        if len(x.shape) == 1:
+            return self.translation_func(x)
+        else:
+            return torch.stack([self.translation_func(x[i]) for i in range(x.shape[0])])
+
 class MarkovStagHuntSensorWrapper:
 
     def __init__(self, env, num_sensors=None):
