@@ -9,6 +9,8 @@ from .mappo import MAPPO
 from .smappo import SMAPPO
 from .acsppo import ACSPPO
 from .sacsppo import SACSPPO
+from .isarsa import ISARSA
+from .sisarsa import SISARSA
 from .base import BaseMARLAlgo
 
 from .safety_calculator import SafetyCalculator
@@ -18,6 +20,8 @@ classes = [
     "SIQL",
     "PSIQL",
     "SPSIQL",
+    "ISARSA",
+    "SISARSA",
     "IPPO",
     "SIPPO",
     "MAPPO",
@@ -33,7 +37,8 @@ SHIELDED_ALGOS = {
     "SPSIQL": SPSIQL, 
     "SIPPO": SIPPO, 
     "SMAPPO": SMAPPO, 
-    "SACSPPO": SACSPPO
+    "SACSPPO": SACSPPO,
+    "SISARSA": SISARSA
 }
 
 UNSHIELDED_ALGOS = {
@@ -43,6 +48,7 @@ UNSHIELDED_ALGOS = {
     "MAPPO": MAPPO, 
     "ACSPPO": ACSPPO,
     "PSPPO": ACSPPO,
+    "ISARSA": ISARSA
 }
 
 ALL_ALGORITHMS = {**UNSHIELDED_ALGOS, **SHIELDED_ALGOS}
