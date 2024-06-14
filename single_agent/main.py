@@ -1,14 +1,15 @@
 import gym
 import gym_safety
-# env = gym.make('GridNav-v0', gridsize=5)
-env = gym.make('CartSafe-v0')
+env = gym.make('GridNav-v0', gridsize=5)
+# env = gym.make('CartSafe-v0')
 
 obs = env.reset() # difference: no info
 num_episodes = 10
 
 print(env.observation_space)
 print(env.action_space)
-# exit()
+print(env.obstacle_states)
+exit()
 print(obs)
 for episode in range(num_episodes):
     obs = env.reset()

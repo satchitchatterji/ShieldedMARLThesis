@@ -28,6 +28,7 @@ ALL_ENVS = {
     "publicgoods": public_goods_env,
     "publicgoodsmany": public_goodsmany_env,
     "CartSafe-v0": pz_wrapper_parallel_env,
+    "GridNav-v0": pz_wrapper_parallel_env,
 }
 
 ALL_ENVS_ARGS = {
@@ -40,6 +41,7 @@ ALL_ENVS_ARGS = {
     "publicgoods": {"initial_endowment": 10, "mult_factor": None, "observe_f": True, "rand_f_between": [0.1, 4]},
     "publicgoodsmany": {"n_agents":10, "initial_endowment": 10, "mult_factor": None, "observe_f": True, "rand_f_between": [10, 12]},
     "CartSafe-v0": {"env_name": "CartSafe-v0"},
+    "GridNav-v0": {"env_name": "GridNav-v0", "gridsize": 10}
 }
 
 # To add a new env:

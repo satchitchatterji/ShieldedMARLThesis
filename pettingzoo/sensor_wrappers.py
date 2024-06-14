@@ -15,6 +15,7 @@ def get_wrapper(env):
         "publicgoods": PublicGoodsSensorWrapper,
         "publicgoodsmany": PublicGoodsSensorWrapper,
         "CartSafe-v0": CartSafeSensorWrapper,
+        "GridNav-v0": GridNavSensorWrapper,
     }
     if env in wrappers.keys():
         return wrappers[env]
@@ -114,6 +115,45 @@ class CartSafeSensorWrapper:
             return self.translation_func(x)
         else:
             return torch.stack([self.translation_func(x[i]) for i in range(x.shape[0])])
+
+
+class GridNavSensorWrapper:
+    """
+    Sensor wrapper for the GridNav environment. 
+    """
+    def __init__(self, env, num_sensors=None):
+        self.env = env
+        self.num_sensors = 4
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.translation_func = self.grid_nav_simple
+        self.obstruction_map = self.env._env.obstacle_states
+    
+    def grid_nav_simple(self, obs):
+        """
+        Returns if an obstacle is in the agent's path
+        """
+        obs = obs.cpu().numpy()
+
+        agent_cur_pos = np.argmax(obs)
+        agent_x, agent_y = agent_cur_pos // self.env._env.gridsize, agent_cur_pos % self.env._env.gridsize
+        
+        # check if there is an obstruction in the cardinal directions compared to self.obstruction_map
+
+        down = list(self.env._env.ACTIONS[0] + np.array([agent_x, agent_y])) in self.obstruction_map
+        left = list(self.env._env.ACTIONS[1] + np.array([agent_x, agent_y])) in self.obstruction_map
+        up = list(self.env._env.ACTIONS[2] + np.array([agent_x, agent_y])) in self.obstruction_map
+        right = list(self.env._env.ACTIONS[3] + np.array([agent_x, agent_y])) in self.obstruction_map
+
+        return torch.tensor(np.array([down, left, up, right], dtype=np.float32), dtype=torch.float32, device=self.device)
+
+    def __call__(self, x):
+        # TODO: batch processing
+        if len(x.shape) == 1:
+            return self.translation_func(x)
+        else:
+            return torch.stack([self.translation_func(x[i]) for i in range(x.shape[0])])
+
+
 
 class MarkovStagHuntSensorWrapper:
 
