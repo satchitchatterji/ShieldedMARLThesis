@@ -191,6 +191,11 @@ if not os.path.exists(f"histories/{env_name}/{algo_name}/{cur_time}_safety.pk"):
 with open(f"histories/{env_name}/{algo_name}/{cur_time}_safety.pk", "wb") as f:
     pk.dump(eval_safeties, f)
 
+if not os.path.exists(f"histories/{env_name}/{algo_name}/{cur_time}_eval_eps.pk"):
+    os.makedirs(f"histories/{env_name}/{algo_name}", exist_ok=True)
+with open(f"histories/{env_name}/{algo_name}/{cur_time}_eval_eps.pk", "wb") as f:
+    pk.dump(eval_episodes, f)
+
 print("Training complete. Fileref:", cur_time)
 print("Runtime:", datetime.datetime.now() - now)
 # safe config dict to json file
