@@ -42,6 +42,12 @@ parser.add_argument("--n_eval",
                     help="Number of episodes to evaluate for each evaluation."
                     )
 
+parser.add_argument("--seed",
+                    type=int,
+                    default=0,
+                    help="Seed for reproducibility."
+                    )
+
 parser.add_argument("--shield_alpha",
                     type=float,
                     default=1.0,
