@@ -270,8 +270,9 @@ class DQNShielded(object):
         
         state = torch.Tensor(state).to(self.device)
 
-        Q_values = self.get_action_probs(state)
-        action = self.random_action(np.array(Q_values))
+        Q_values_prob = self.get_action_probs(state)
+        Q_values = self.calc_action_values(state.unsqueeze(0)).squeeze(0).detach()
+        action = self.random_action(np.array(Q_values_prob))
 
         if self.training:
             # update epsilon
@@ -279,7 +280,7 @@ class DQNShielded(object):
             self.epsilon = max(self.epsilon, self.epsilon_min)
 
             # states, q_vals, action, reward, terminal, action_dist
-            self._temp_history = [state, Q_values, action, None, None, Q_values]
+            self._temp_history = [state, Q_values, action, None, None, Q_values_prob]
 
         return self.controls[action]
 
@@ -372,29 +373,27 @@ class DQNShielded(object):
         next_batch = current_batch + 1
 
         cur_states = torch.stack([self.history[int(i)][STATE] for i in current_batch]).to(self.device).float()
+        next_states = torch.stack([self.history[int(i)][STATE] for i in next_batch]).to(self.device).float()
         cur_q_vals = torch.stack([self.history[int(i)][Q_VALS] for i in current_batch]).to(self.device).float()
-        next_q_vals = torch.stack([self.history[int(i)][Q_VALS] for i in next_batch]).to(self.device).float()
         cur_actions = torch.stack([torch.tensor(self.history[int(i)][ACTION]) for i in current_batch]).to(self.device)
         cur_rewards = torch.stack([torch.tensor(self.history[int(i)][REWARD]) for i in current_batch]).to(self.device).float()
         cur_terminal = torch.stack([torch.tensor(self.history[int(i)][TERMINAL]) for i in current_batch]).to(self.device).bool()
         cur_action_dist = torch.stack([self.history[int(i)][ACTION_DIST] for i in current_batch]).to(self.device).float()
 
-        X_train = cur_states
-        y_train = cur_q_vals.float().clone().detach()
-                
+        # forward pass through the target network
+        q_bar = self.target_func_approx(next_states)
+
+        y_train_targets = cur_q_vals.float().clone().detach()
         # if it is not a terminal state, update the q value with respect to future reward
         # if it is a terminal state, the q value is just the reward
-        targets = torch.mul(self.gamma, torch.max(next_q_vals, axis=1)[0])
-        y_train[:, cur_actions] = cur_rewards + torch.mul(1-cur_terminal.int().float(), targets)
-        
-        safety_augmentations =  self.get_safety_loss(cur_states, cur_action_dist)
-        safety_loss = torch.mean(safety_augmentations).to(self.device)
-
-        # forward pass through the target network
-        y_pred = self.target_func_approx(X_train)
+        targets = torch.mul(self.gamma, torch.max(q_bar, axis=1)[0])
+        y_train_targets[:, cur_actions] = cur_rewards + torch.mul(1-cur_terminal.int().float(), targets)
 
         # calculate loss
-        base_loss = self.base_loss_fn(y_pred, y_train)
+        base_loss = self.base_loss_fn(y_train_targets, cur_q_vals.float().clone().detach())
+
+        safety_augmentations =  self.get_safety_loss(cur_states, cur_action_dist)
+        safety_loss = torch.mean(safety_augmentations).to(self.device)
         loss = base_loss + safety_loss
 
         self.optimizer.zero_grad()
