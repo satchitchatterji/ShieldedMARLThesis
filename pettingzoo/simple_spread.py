@@ -1,11 +1,10 @@
 import os
-import sys
 import datetime
 import pickle as pk
 
 import numpy as np
+import torch
 import matplotlib.pyplot as plt
-from tqdm import trange
 import wandb
 
 import action_wrappers
@@ -18,10 +17,15 @@ from config import config
 
 from run_episode import run_episode, eval_episode
 
+np.random.seed(config.seed)
+torch.manual_seed(config.seed)
+
 system = os.name
 # cur_time = time.time()
 now = datetime.datetime.now()
 cur_time = now.strftime("%Y-%m-%d_%H%M%S")
+
+print("Current time:", cur_time)
 
 # set up environment
 max_training_episodes = config.max_eps
