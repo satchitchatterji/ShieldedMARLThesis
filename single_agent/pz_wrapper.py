@@ -23,6 +23,8 @@ class parallel_env(ParallelEnv):
     metadata = {'render.modes': ['human'], "name": "gym_safety"}
 
     def __init__(self, env_name, n_agents=1, max_cycles=50, render_mode=None, **env_kwargs):
+        assert n_agents == 1, "This environment is designed for single agent only"
+        
         parallel_env.metadata["name"] = env_name
         
         self._env = gym.make(env_name, **env_kwargs)
