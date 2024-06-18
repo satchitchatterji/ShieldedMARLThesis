@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import pickle as pk
 import os
 
-def load_data(file, which = "all"):
+def load_data(base, file, which = "all"):
     data = []
     if which == "all" or which == "train":
         with open(f"{base}/{file}_train.pk", "rb") as f:
@@ -77,7 +77,7 @@ def plot_rewards_sum(reward_hists, ax, label=""):
 
 ############################################ PLOT EVAL MEAN REWARDS ############################################
 
-def plot_eval_mean(eval_hists, eval_episodes, ax):
+def plot_eval_mean(eval_hists, eval_episodes, ax, label=""):
     # compute eval means and stds
     eval_means = {}
     eval_stds = {}
@@ -92,7 +92,7 @@ def plot_eval_mean(eval_hists, eval_episodes, ax):
 
     # plot eval info
     for a, agent in enumerate(eval_hists[0][0].keys()):
-        ax.errorbar(eval_episodes, eval_means[agent], yerr=eval_stds[agent], label=f"{agent} mean", capsize=5, marker="x")
+        ax.errorbar(eval_episodes, eval_means[agent], yerr=eval_stds[agent], label=label, capsize=5, marker="x")
 
     if len(eval_hists[0][0].keys()) > 1:
         # compute overall mean and std
@@ -101,7 +101,7 @@ def plot_eval_mean(eval_hists, eval_episodes, ax):
         for eval_hist in eval_hists:
             eval_means["mean"].append(np.mean([np.mean([np.mean(eval_reward_hist[agent]) for agent in eval_reward_hist.keys()]) for eval_reward_hist in eval_hist]))
             eval_stds["mean"].append(np.std([np.mean([np.mean(eval_reward_hist[agent]) for agent in eval_reward_hist.keys()]) for eval_reward_hist in eval_hist]))
-        ax.errorbar(eval_episodes, eval_means["mean"], yerr=eval_stds["mean"], label="mean", color="black", linestyle="--", capsize=5, marker="x")
+        ax.errorbar(eval_episodes, eval_means["mean"], yerr=eval_stds["mean"], color="black", linestyle="--", capsize=5, marker="x")
 
     # plt.xticks(eval_episodes)
     # plt.xlabel("Episode")
@@ -116,7 +116,7 @@ def plot_eval_mean(eval_hists, eval_episodes, ax):
 
 ############################################ PLOT EVAL SUM REWARDS ############################################
 
-def plot_eval_sum(eval_hists, eval_episodes, ax):
+def plot_eval_sum(eval_hists, eval_episodes, ax, label=""):
     # compute eval sums and stds
     eval_sums = {}
     eval_stds = {}
@@ -130,7 +130,7 @@ def plot_eval_sum(eval_hists, eval_episodes, ax):
 
     # plot eval info
     for a, agent in enumerate(eval_hists[0][0].keys()):
-        ax.errorbar(eval_episodes, eval_sums[agent], yerr=eval_stds[agent], label=f"{agent} total", capsize=5, marker="x")
+        ax.errorbar(eval_episodes, eval_sums[agent], yerr=eval_stds[agent], label=label, capsize=5, marker="x")
     
 
     if len(eval_hists[0][0].keys()) > 1:        # compute overall mean and std
@@ -140,7 +140,7 @@ def plot_eval_sum(eval_hists, eval_episodes, ax):
             eval_sums["mean"].append(np.mean([np.mean([np.sum(eval_reward_hist[agent]) for agent in eval_reward_hist.keys()]) for eval_reward_hist in eval_hist]))
             eval_stds["mean"].append(np.std([np.mean([np.sum(eval_reward_hist[agent]) for agent in eval_reward_hist.keys()]) for eval_reward_hist in eval_hist]))
 
-        ax.errorbar(eval_episodes, eval_sums["mean"], yerr=eval_stds["mean"], label="mean", color="black", linestyle="--", capsize=5, marker="x")
+        ax.errorbar(eval_episodes, eval_sums["mean"], yerr=eval_stds["mean"], label=label, color="black", linestyle="--", capsize=5, marker="x")
 
     # # plt.xticks(eval_episodes)
     # plt.xlabel("Episode")
@@ -154,7 +154,7 @@ def plot_eval_sum(eval_hists, eval_episodes, ax):
 
 ############################################ PLOT EVAL MEAN SAFETY ############################################
 
-def plot_eval_safety(eval_safeties, eval_episodes, ax):
+def plot_eval_safety(eval_safeties, eval_episodes, ax, label=""):
    
     # plot safety info
     # compute eval means and stds
@@ -170,7 +170,7 @@ def plot_eval_safety(eval_safeties, eval_episodes, ax):
 
     # plot eval info
     for a, agent in enumerate(eval_safeties[0][0].keys()):
-        ax.errorbar(eval_episodes, eval_means[agent], yerr=eval_stds[agent], label=f"{agent} mean", capsize=5, marker="x")
+        ax.errorbar(eval_episodes, eval_means[agent], yerr=eval_stds[agent], label=label, capsize=5, marker="x")
     
     if len(eval_safeties[0][0].keys()) > 1:
         # compute overall mean and std
@@ -180,7 +180,7 @@ def plot_eval_safety(eval_safeties, eval_episodes, ax):
             eval_means["mean"].append(np.mean([np.mean([np.mean(eval_reward_hist[agent]) for agent in eval_reward_hist.keys()]) for eval_reward_hist in eval_hist]))
             eval_stds["mean"].append(np.std([np.mean([np.mean(eval_reward_hist[agent]) for agent in eval_reward_hist.keys()]) for eval_reward_hist in eval_hist]))
 
-        ax.errorbar(eval_episodes, eval_means["mean"], yerr=eval_stds["mean"], label="mean", color="black", linestyle="--", capsize=5, marker="x")
+        ax.errorbar(eval_episodes, eval_means["mean"], yerr=eval_stds["mean"], label=label, color="black", linestyle="--", capsize=5, marker="x")
 
     # plt.xticks(eval_episodes)
     # plt.xlabel("Episode")
@@ -193,6 +193,18 @@ def plot_eval_safety(eval_safeties, eval_episodes, ax):
 
 
 if __name__ == "__main__":
-    base = "../../../histories/CartSafe-v0"
-    base_configs = "../../../configs/CartSafe-v0"
-    files = {"IPPO": "2024-06-14_195159", "SIPPO": "2024-06-11_190327"}
+    base = "../histories/CartSafe-v0"
+    base_configs = "../configs/CartSafe-v0"
+    files = {"IPPO": "2024-06-18_153958", "SIPPO": "2024-06-18_154455"}
+
+    fig, axs = plt.subplots(3, 2, figsize=(20, 15))
+    axs = axs.flatten()
+
+    for i, (algo_name, file) in enumerate(files.items()):
+        train, eval, safety, eval_eps = load_data(algo_name+"/"+file, "all")
+        # plot rewards
+        plot_rewards(train, axs[i], label="train")
+        plot_rewards_sum(train, axs[i+2], label="train")
+        plot_eval_mean(eval, eval_eps, axs[i+4])
+        plot_eval_sum(eval, eval_eps, axs[i+4])
+        plot_eval_safety(safety, eval_eps, axs[i+4])
