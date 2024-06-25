@@ -6,7 +6,7 @@ import gym_safety
 import numpy as np
 from pettingzoo import ParallelEnv
 from pettingzoo.utils import wrappers
-
+import math
 import functools
 
 def env(render_mode=None):
@@ -26,6 +26,7 @@ class parallel_env(ParallelEnv):
         assert n_agents == 1, "This environment is designed for single agent only"
         
         parallel_env.metadata["name"] = env_name
+        assert env_name == "CartSafe-v0", f"This wrapper is only designed so far for CartSafe-v0 (not {env_name}) because of env customization."
         
         self._env = gym.make(env_name, **env_kwargs)
         self.agents = ["player_" + str(r) for r in range(n_agents)]
@@ -53,6 +54,8 @@ class parallel_env(ParallelEnv):
         self.agents = self.possible_agents[:]
         self.rewards = {agent: 0 for agent in self.agents}
         obs = self._env.reset()
+        self._env.state[2] -= math.pi
+        obs[2] -= math.pi
         self.observations = {agent: obs for agent in self.agents}
         self.terminations = {agent: False for agent in self.agents}
         self.truncations = {agent: False for agent in self.agents}
@@ -67,19 +70,36 @@ class parallel_env(ParallelEnv):
     def close(self):
         self._env.close()
 
+    def compute_reward(self, agent, action):
+        angle = self._env.state[2]
+        fifteen_degrees = math.pi / 12
+        if -fifteen_degrees < angle < fifteen_degrees:
+            return 1
+        return 0
+    
     def step(self, actions):
 
         action = actions[self.agents[0]]
-        next_obs, reward, done, info = self._env.step(action)
+
+        reward = self.compute_reward(self.agents[0], action)        
+        next_obs, original_reward, done, info = self._env.step(action)
         
+        if done:
+            reward = 0
+
+        env_truncated = done
+        if reward < -100:
+            env_truncated = True
+        
+        # reward = original_reward
+
         self.observations = {agent: next_obs for agent in self.agents}
         self.rewards = {agent: reward for agent in self.agents}
-        self.terminations = {agent: done for agent in self.agents}
-        self.truncations = {agent: False for agent in self.agents}
+        self.terminations = {agent: done or self.num_moves >= self.max_cycles for agent in self.agents}
+        self.truncations = {agent: env_truncated for agent in self.agents}
         self.infos = {agent: info for agent in self.agents}
         self.num_moves += 1
 
-        env_truncated = done or self.num_moves >= self.max_cycles
         if env_truncated:
             self.agents = []
 
