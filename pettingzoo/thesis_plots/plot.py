@@ -27,57 +27,70 @@ def load_data(base, file, which = "all"):
 
     return tuple(data)
 
-def plot_rewards(reward_hists, ax, label=""):
+def cumulative_mean(data):
+
+    if len(data) == 0:
+        return np.array([])
+    
+    cumulative_sum = 0
+    cumulative_means = []
+    
+    for i, value in enumerate(data):
+        cumulative_sum += value
+        cumulative_means.append(cumulative_sum / (i + 1))
+    
+    return np.array(cumulative_means)
+
+def rolling_average(data, window_size=100):
+    if type(window_size) ==str:
+        return cumulative_mean(data)
+    
+    if window_size < 1:
+        raise ValueError("Window size must be at least 1")
+    elif window_size == 1:
+        return data
+
+    cumsum = np.cumsum(np.insert(data, 0, 0)) 
+    rolling_avg = (cumsum[window_size:] - cumsum[:-window_size]) / window_size
+    
+    return rolling_avg
+
+
+def plot_rewards(reward_hists, ax, label="", rolling_window=1):
     # plot mean rewards per episode
     agent_rewards = [[np.mean(reward_hist[agent]) for reward_hist in reward_hists] for agent in reward_hists[0].keys()]
     for a, agent in enumerate(reward_hists[0].keys()):
         if label == "": 
             label=agent
-        ax.plot(agent_rewards[a], label=label)
+        ax.plot(rolling_average(agent_rewards[a],rolling_window), label=label)
 
     if len(reward_hists[0].keys()) > 1:
-        ax.plot([np.mean([np.mean(reward_hist[agent]) for agent in reward_hist.keys()]) for reward_hist in reward_hists], label="mean", color="black", linestyle="--")
+        mean = [np.mean([np.mean(reward_hist[agent]) for agent in reward_hist.keys()]) for reward_hist in reward_hists]
+        ax.plot(rolling_average(mean, rolling_window), label="mean", color="black", linestyle="--")
 
-    # ax.set_xlabel("Episode")
-    # ax.set_ylabel("Mean Reward")
-    # ax.set_title(f"{algo_name} on {env_name} (training)")
-
-    # plt.legend()
-
-    # plt.grid(True)
-    # # plt.savefig(f"plots/{env_name}/{algo_name}/{cur_time}_train_mean.png")
-    # plt.show()
-    # plt.clf()
     return ax
 
 ############################################ PLOT SUM REWARDS ############################################
 
-def plot_rewards_sum(reward_hists, ax, label=""):
+def plot_rewards_sum(reward_hists, ax, label="", rolling_window=1):
     # plot sum of rewards per episode
     agent_rewards = [[np.sum(reward_hist[agent]) for reward_hist in reward_hists] for agent in reward_hists[0].keys()]
     for a, agent in enumerate(reward_hists[0].keys()):
         if label == "": 
             label=agent
-        ax.plot(agent_rewards[a], label=label)
+        ax.plot(rolling_average(agent_rewards[a],rolling_window), label=label)
 
 
     if len(reward_hists[0].keys()) > 1:
-        ax.plot([np.mean([np.sum(reward_hist[agent]) for agent in reward_hist.keys()]) for reward_hist in reward_hists], label="mean", color="black", linestyle="--")
+        mean = [np.mean([np.sum(reward_hist[agent]) for agent in reward_hist.keys()]) for reward_hist in reward_hists]
+        ax.plot(rolling_average(mean, rolling_window), label="mean", color="black", linestyle="--")
 
     return ax
-    # plt.xlabel("Episode")
-    # plt.ylabel("Total Reward")
-    # plt.title(f"{algo_name} on {env_name} (training)")
 
-    # plt.legend()
-    # plt.grid(True)
-    # # plt.savefig(f"plots/{env_name}/{algo_name}/{cur_time}_train_total.png")
-    # plt.show()
-    # plt.clf()
 
 ############################################ PLOT EVAL MEAN REWARDS ############################################
 
-def plot_eval_mean(eval_hists, eval_episodes, ax, label=""):
+def plot_eval_mean(eval_hists, eval_episodes, ax, label="", rolling_window=1):
     # compute eval means and stds
     eval_means = {}
     eval_stds = {}
@@ -92,7 +105,7 @@ def plot_eval_mean(eval_hists, eval_episodes, ax, label=""):
 
     # plot eval info
     for a, agent in enumerate(eval_hists[0][0].keys()):
-        ax.errorbar(eval_episodes, eval_means[agent], yerr=eval_stds[agent], label=label, capsize=5, marker="x")
+        ax.errorbar(eval_episodes, rolling_average(eval_means[agent], rolling_window), yerr=rolling_average(eval_stds[agent], rolling_window), label=label, capsize=5, marker="x")
 
     if len(eval_hists[0][0].keys()) > 1:
         # compute overall mean and std
@@ -101,22 +114,14 @@ def plot_eval_mean(eval_hists, eval_episodes, ax, label=""):
         for eval_hist in eval_hists:
             eval_means["mean"].append(np.mean([np.mean([np.mean(eval_reward_hist[agent]) for agent in eval_reward_hist.keys()]) for eval_reward_hist in eval_hist]))
             eval_stds["mean"].append(np.std([np.mean([np.mean(eval_reward_hist[agent]) for agent in eval_reward_hist.keys()]) for eval_reward_hist in eval_hist]))
-        ax.errorbar(eval_episodes, eval_means["mean"], yerr=eval_stds["mean"], color="black", linestyle="--", capsize=5, marker="x")
+        ax.errorbar(eval_episodes, rolling_average(eval_means["mean"], rolling_window), yerr=rolling_average(eval_stds["mean"], rolling_window), color="black", linestyle="--", capsize=5, marker="x")
 
-    # plt.xticks(eval_episodes)
-    # plt.xlabel("Episode")
-    # plt.ylabel("Mean Reward")
-    # plt.title(f"{algo_name} on {env_name} (evaluation)")
-    # plt.grid(True)
-    # plt.legend()
-
-    # plt.show()
     return ax
 
 
 ############################################ PLOT EVAL SUM REWARDS ############################################
 
-def plot_eval_sum(eval_hists, eval_episodes, ax, label=""):
+def plot_eval_sum(eval_hists, eval_episodes, ax, label="", rolling_window=1):
     # compute eval sums and stds
     eval_sums = {}
     eval_stds = {}
@@ -130,7 +135,7 @@ def plot_eval_sum(eval_hists, eval_episodes, ax, label=""):
 
     # plot eval info
     for a, agent in enumerate(eval_hists[0][0].keys()):
-        ax.errorbar(eval_episodes, eval_sums[agent], yerr=eval_stds[agent], label=label, capsize=5, marker="x")
+        ax.errorbar(eval_episodes, rolling_average(eval_sums[agent], rolling_window), yerr=rolling_average(eval_stds[agent], rolling_window), label=label, capsize=5, marker="x")
     
 
     if len(eval_hists[0][0].keys()) > 1:        # compute overall mean and std
@@ -140,16 +145,8 @@ def plot_eval_sum(eval_hists, eval_episodes, ax, label=""):
             eval_sums["mean"].append(np.mean([np.mean([np.sum(eval_reward_hist[agent]) for agent in eval_reward_hist.keys()]) for eval_reward_hist in eval_hist]))
             eval_stds["mean"].append(np.std([np.mean([np.sum(eval_reward_hist[agent]) for agent in eval_reward_hist.keys()]) for eval_reward_hist in eval_hist]))
 
-        ax.errorbar(eval_episodes, eval_sums["mean"], yerr=eval_stds["mean"], label=label, color="black", linestyle="--", capsize=5, marker="x")
+        ax.errorbar(eval_episodes, rolling_average(eval_sums["mean"], rolling_window), yerr=rolling_average(eval_stds["mean"], rolling_window), label=label, color="black", linestyle="--", capsize=5, marker="x")
 
-    # # plt.xticks(eval_episodes)
-    # plt.xlabel("Episode")
-    # plt.ylabel("Total Reward")
-    # plt.title(f"{algo_name} on {env_name} (evaluation)")
-    # plt.grid(True)
-    # plt.legend()
-    # # plt.savefig(f"plots/{env_name}/{algo_name}/{cur_time}_eval_total.png")
-    # plt.show()
     return ax
 
 ############################################ PLOT EVAL MEAN SAFETY ############################################
@@ -182,13 +179,6 @@ def plot_eval_safety(eval_safeties, eval_episodes, ax, label=""):
 
         ax.errorbar(eval_episodes, eval_means["mean"], yerr=eval_stds["mean"], label=label, color="black", linestyle="--", capsize=5, marker="x")
 
-    # plt.xticks(eval_episodes)
-    # plt.xlabel("Episode")
-    # plt.ylabel("Mean Safety")
-    # plt.title(f"{algo_name} on {env_name} (safety evaluations)")
-    # plt.grid(True)
-    # plt.legend()
-    # plt.show()
     return ax
 
 
