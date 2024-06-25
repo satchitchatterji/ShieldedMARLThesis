@@ -133,6 +133,16 @@ algo = ALL_ALGORITHMS[algo_name](env=env,
 safety_calc = SafetyCalculator(sh_params)
 # safety_calc = None
 
+############################################ SAVE CONFIG ############################################
+
+# safe config dict to json file
+import json
+if not os.path.exists(f"configs/{env_name}/{algo_name}/{cur_time}.json"):
+    os.makedirs(f"configs/{env_name}/{algo_name}", exist_ok=True)
+with open(f"configs/{env_name}/{algo_name}/{cur_time}.json", "w") as f:
+    s = json.dumps(vars(config), indent=4)
+    f.write(s)
+    
 ############################################ TRAINING ############################################
 
 reward_hists = []
@@ -202,13 +212,7 @@ with open(f"histories/{env_name}/{algo_name}/{cur_time}_eval_eps.pk", "wb") as f
 
 print("Training complete. Fileref:", cur_time)
 print("Runtime:", datetime.datetime.now() - now)
-# safe config dict to json file
-import json
-if not os.path.exists(f"configs/{env_name}/{algo_name}/{cur_time}.json"):
-    os.makedirs(f"configs/{env_name}/{algo_name}", exist_ok=True)
-with open(f"configs/{env_name}/{algo_name}/{cur_time}.json", "w") as f:
-    s = json.dumps(vars(config), indent=4)
-    f.write(s)
+
 
 ############################################ PLOT MEAN REWARDS ############################################
 
