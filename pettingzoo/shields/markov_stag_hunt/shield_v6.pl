@@ -13,7 +13,7 @@ sensor_value(4)::sensor(stag_near_self).
 sensor_value(5)::sensor(stag_near_other).
 
 % hunt stag if it is near and there is another agent
-stag_surrounded :- sensor(stag_near_self), sensor(stag_near_other).
+% stag_surrounded :- sensor(stag_near_self), sensor(stag_near_other).
 hunt :- action(Dir), sensor(Dir).
 
 % run away from stag if it is near and there is no other agent
@@ -22,8 +22,8 @@ hunt :- action(Dir), sensor(Dir).
 % waiting is fine if stag is near and there is no other agent
 % hunt_alone :- action(stay), stag_alone
 
-safe_next :- hunt, stag_surrounded.
-safe_next :- \+stag_surrounded.
+safe_next :- \+hunt, sensor(stag_near_self).
+safe_next :- \+sensor(stag_near_self).
 % safe_next :- hunt_alone.
 % safe_next :- \+hunt_alone.
 % any action is safe if a stag is not near
