@@ -38,9 +38,9 @@ ALL_ENVS_ARGS = {
     "simple_pd_v0": {"game": "pd", "num_actions": 2},
     "simple_chicken_v0": {"game": "chicken", "num_actions": 2},
     "centipede": {"randomize_players": True, "growth_rate": 1},
-    # "publicgoods": {"initial_endowment": 2, "mult_factor": None, "observe_f": True, "rand_f_between": [0.1, 4]},
-    "publicgoods": {"initial_endowment": 2, "mult_factor": 2.5, "observe_f": False},
-    "publicgoodsmany": {"n_agents":10, "initial_endowment": 10, "mult_factor": None, "observe_f": True, "rand_f_between": [10, 12]},
+    "publicgoods": {"initial_endowment": 2, "mult_factor": None, "observe_f": True, "f_params": [2, 0.5]},
+    # "publicgoods": {"initial_endowment": 2, "mult_factor": 2.5, "observe_f": False},
+    "publicgoodsmany": {"n_agents":10, "initial_endowment": 10, "mult_factor": None, "observe_f": True, "f_params": [2, 0.5]},
     "CartSafe-v0": {"env_name": "CartSafe-v0"},
     "GridNav-v0": {"env_name": "GridNav-v0", "gridsize": 10}
 }
