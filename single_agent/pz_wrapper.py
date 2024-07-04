@@ -75,7 +75,7 @@ class parallel_env(ParallelEnv):
         fifteen_degrees = math.pi / 12
         if -fifteen_degrees < angle < fifteen_degrees:
             return 1
-        return 0
+        return -1
     
     def step(self, actions):
 
@@ -90,7 +90,7 @@ class parallel_env(ParallelEnv):
         env_truncated = done
         if reward < -100:
             env_truncated = True
-        
+
         # reward = original_reward
 
         self.observations = {agent: next_obs for agent in self.agents}
