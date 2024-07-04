@@ -1,3 +1,5 @@
+raise RuntimeError, "This file is not meant to be executed (issues with training loop). Please use DQN from better_dqnpls.py instead."
+
 import numpy as np
 import random
 

@@ -39,7 +39,7 @@ class DQNShielded(object):
                  update_target_type='soft',
                  explore_policy='e_greedy',
                  eval_policy='greedy',
-                 on_policy=True,
+                 on_policy=False,
                  **kwargs # made to be compatible with PPO
                  ):
 
@@ -156,7 +156,16 @@ class DQNShielded(object):
         return model
     
     def update_target_net(self, reinit=False):
-        self.target_func_approx = self.func_approx
+        if reinit:
+            self.target_func_approx = self.init_mlp(self.n_inputs, self.num_actions)
+
+        if self.update_target_type == 'hard':
+            if self.step % self.update_timestep == 0:
+                self.target_func_approx.load_state_dict(self.func_approx.state_dict())
+                self.target_func_approx.eval()
+        elif self.update_target_type == 'soft':
+            for target_param, param in zip(self.target_func_approx.parameters(), self.func_approx.parameters()):
+                target_param.data.copy_(self.tau * param.data + (1.0 - self.tau) * target_param.data)
 
     def calc_action_values(self, inputs):
         """ Return Q(s,a) for a given state s:=inputs,
@@ -168,6 +177,8 @@ class DQNShielded(object):
         """ Choose a random action (random arm to pull), with probabilities probs
             If probs is None, then each choice is equally likely. """
         n_actions = len(probs)
+        if sum(probs) != 1.0:
+            probs = probs / sum(probs)
         return np.random.choice(range(n_actions), p=probs)
 
     def e_greedy(self, Q_values):
@@ -175,19 +186,17 @@ class DQNShielded(object):
             or choose another random one with probability epsilon """
         n_actions = len(Q_values)
 
-        if random.random() < self.epsilon and not self.eval_mode:
+        if random.random() < self.epsilon:
             return np.random.choice(range(n_actions))
         else:
             return np.argmax(Q_values.detach().cpu().numpy())
 
     def e_greedy_policy(self, Q_values):
         """ Return the epsilon-greedy policy for a given state in the form of a tensor of probabilities """
+        
         num_actions = Q_values.size(0)
-        # Initialize the policy with epsilon for all actions
         policy = torch.ones(num_actions) * (self.epsilon / num_actions)
-        # Find the action with the maximum Q-value
         best_action = torch.argmax(Q_values).item()
-        # Add the remaining probability (1 - epsilon) to the best action
         policy[best_action] += 1.0 - self.epsilon
         
         return policy
@@ -264,8 +273,8 @@ class DQNShielded(object):
         
         state = torch.Tensor(state).to(self.device)
 
-        Q_values_prob = self.get_action_probs(state)
-        Q_values = self.calc_action_values(state.unsqueeze(0)).squeeze(0).detach()
+        # Q_values = self.calc_action_values(state.unsqueeze(0)).squeeze(0).detach()
+        Q_values_prob, Q_values = self.get_action_probs(state, return_action_values=True)
         action = self.random_action(np.array(Q_values_prob))
 
         if self.training:
@@ -273,8 +282,6 @@ class DQNShielded(object):
             self.epsilon *= self.epsilon_decay
             self.epsilon = max(self.epsilon, self.epsilon_min)
 
-            # states, q_vals, action, reward, terminal, action_dist
-            # self._temp_history = [state, Q_values, action, None, None, Q_values_prob]
             self._temp_history = [None]*6
             self._temp_history[STATE] = state
             self._temp_history[Q_VALS] = Q_values
@@ -301,7 +308,7 @@ class DQNShielded(object):
                 self.history.pop(0)
             
             # update the target network
-            self.update_target_net()
+            # self.update_target_net() #NOTE: this is ignored for now
             
             self.step += 1
         
@@ -345,17 +352,23 @@ class DQNShielded(object):
     
         return Q_values_norm.to(self.device, dtype=torch.float32)
     
-    def get_action_probs(self, state):
+    def get_action_probs(self, state, return_action_values=False):
         with torch.no_grad():
             state = torch.Tensor(state).to(self.device)
             Q_values = self.calc_action_values(state.unsqueeze(0)).squeeze(0).detach()
             Q_values_norm = self.normalize_Q_values(Q_values)
         
         if self.eval_mode and self.eval_policy == 'greedy': # shield breaks if there's no safe actions
-            shielded_policy = Q_values_norm
-        else: 
-            shielded_policy = self.get_shielded_action(state, Q_values_norm).squeeze(0).to(self.device)
-
+            eps = self.epsilon
+            self.epsilon = 0.001
+            Q_values_norm = self.e_greedy_policy(Q_values)
+            self.epsilon = eps
+ 
+        shielded_policy = self.get_shielded_action(state, Q_values_norm).squeeze(0).to(self.device)
+        
+        if return_action_values:
+            return shielded_policy, Q_values
+        
         return shielded_policy
 
     def train_model(self):
@@ -371,15 +384,6 @@ class DQNShielded(object):
 
         # uniformly sample from memory
         current_batch = torch.Tensor(random.sample(range(len(self.history)-1), self.batch_size)).to(self.device)
-        next_batch = current_batch + 1
-
-        cur_states = torch.stack([self.history[int(i)][STATE] for i in current_batch]).to(self.device).float()
-        # next_states = torch.stack([self.history[int(i)][STATE] for i in next_batch]).to(self.device).float()
-        # cur_q_vals = torch.stack([self.history[int(i)][Q_VALS] for i in current_batch]).to(self.device).float()
-        # cur_actions = torch.stack([torch.tensor(self.history[int(i)][ACTION]) for i in current_batch]).to(self.device)
-        # cur_rewards = torch.stack([torch.tensor(self.history[int(i)][REWARD]) for i in current_batch]).to(self.device).float()
-        # cur_terminal = torch.stack([torch.tensor(self.history[int(i)][TERMINAL]) for i in current_batch]).to(self.device).bool()
-        cur_action_dist = torch.stack([self.history[int(i)][ACTION_DIST] for i in current_batch]).to(self.device).float()
 
         X_train, y_train = [], []
         for batch_idx in current_batch:
@@ -399,6 +403,7 @@ class DQNShielded(object):
             else:
                 next_action = self.history[batch_idx+1][ACTION]
                 next_Q_vals = self.history[batch_idx+1][Q_VALS]
+                # next_Q_vals = self.target_func_approx(next_state).detach().numpy()
                 self.update_rule = "cur_reward + self.gamma*(next_Q_vals[next_action])"
                 if self.on_policy:
                     target[cur_action] = cur_reward + self.gamma*(next_Q_vals[next_action])
@@ -406,10 +411,13 @@ class DQNShielded(object):
                     target[cur_action] = cur_reward + self.gamma*(max(next_Q_vals))
 
             y_train.append(target)
-            
+    
         X_train = np.array(X_train) 
         y_train = np.array(y_train)
         base_loss = self.base_loss_fn(self.func_approx(torch.Tensor(X_train).to(self.device)), torch.Tensor(y_train).to(self.device))
+
+        cur_states = torch.stack([self.history[int(i)][STATE] for i in current_batch]).to(self.device).float()
+        cur_action_dist = torch.stack([self.history[int(i)][ACTION_DIST] for i in current_batch]).to(self.device).float()
 
         safety_augmentations =  self.get_safety_loss(cur_states, cur_action_dist)
         safety_loss = torch.mean(safety_augmentations).to(self.device)
@@ -439,6 +447,8 @@ class DQNShielded(object):
                 f.write(str(self.debug_info_history))
 
     def ignore_shield(self):
+        # why is this here again?
+        return
         self.shield = None
 
     def set_eval_mode(self, bool_val):
