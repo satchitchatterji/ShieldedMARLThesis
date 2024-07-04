@@ -17,11 +17,11 @@ def compute_eps_min_timestep(eps_start, eps_end, eps_decay):
 
 if __name__ == "__main__":
     eps_start = 1.0
-    eps_end = 0.05
-    timestep = 20000
+    eps_end = 0.01
+    timestep = 25*400
 
     eps_decay = compute_eps_decay(eps_start, eps_end, timestep)
     print(eps_decay)
 
-    eps_decay = 0.9999
-    print(compute_current_epsilon(eps_start, eps_decay, 25000))
+    eps_decay = 0.9995
+    print(compute_current_epsilon(eps_start, eps_decay, timestep))

@@ -59,6 +59,8 @@ with open(config_file, "r") as f:
     config.__dict__ = json.load(f)
     pprint.pprint(config.__dict__)
 
+config.eval_policy = "greedy"
+config.shield_version = 1
 
 del env
 
