@@ -1,0 +1,10 @@
+Installation on Linux
+
+git clone git@github.com:satchitchatterji/ThesisPlayground.git
+git clone git@github.com:satchitchatterji/ThesisPLS.git
+
+conda create -n pls python=3.10
+conda activate pls
+
+cd ThesisPLS
+pip install -e .
