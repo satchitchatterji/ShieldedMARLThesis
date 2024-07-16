@@ -8,3 +8,6 @@ conda activate pls
 
 cd ThesisPLS
 pip install -e .
+
+pip install pettingzoo
+pip install numpy pandas matplotlib tqdm wandb torch
