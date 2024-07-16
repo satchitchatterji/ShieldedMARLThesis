@@ -1,12 +1,12 @@
 import sys
 
-from pettingzoo.mpe import simple_spread_v3
+# from pettingzoo.mpe import simple_spread_v3
 
 sys.path.append("../grid_envs")
 import parallel_stag_hunt
 
-sys.path.append("../pettingzoo_dilemma_envs")
-from dilemma_pettingzoo import parallel_env as dilemma_parallel_env
+# sys.path.append("../pettingzoo_dilemma_envs")
+# from dilemma_pettingzoo import parallel_env as dilemma_parallel_env
 
 sys.path.append("../centipede")
 from centipede_env import parallel_env as centipede_env
@@ -15,20 +15,20 @@ sys.path.append("../publicgoods")
 from publicgoods_env import parallel_env as public_goods_env
 from publicgoodsmany_env import parallel_env as public_goodsmany_env
 
-sys.path.append("../single_agent")
-from pz_wrapper import parallel_env as pz_wrapper_parallel_env
+# sys.path.append("../single_agent")
+# from pz_wrapper import parallel_env as pz_wrapper_parallel_env
 
 ALL_ENVS = {
-    "simple_spread_v3": simple_spread_v3.parallel_env,
+    # "simple_spread_v3": simple_spread_v3.parallel_env,
     "markov_stag_hunt": parallel_stag_hunt.parallel_env,
-    "simple_stag_v0": dilemma_parallel_env,
-    "simple_pd_v0": dilemma_parallel_env,
-    "simple_chicken_v0": dilemma_parallel_env,
+    # "simple_stag_v0": dilemma_parallel_env,
+    # "simple_pd_v0": dilemma_parallel_env,
+    # "simple_chicken_v0": dilemma_parallel_env,
     "centipede": centipede_env,
     "publicgoods": public_goods_env,
     "publicgoodsmany": public_goodsmany_env,
-    "CartSafe-v0": pz_wrapper_parallel_env,
-    "GridNav-v0": pz_wrapper_parallel_env,
+    # "CartSafe-v0": pz_wrapper_parallel_env,
+    # "GridNav-v0": pz_wrapper_parallel_env,
 }
 
 ALL_ENVS_ARGS = {

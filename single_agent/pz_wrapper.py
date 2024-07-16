@@ -1,4 +1,3 @@
-# amended from https://github.com/arjun-prakash/pz_dilemma/blob/main/src/environments/centipede/centipede_v1.py
 
 from gym import spaces
 import gym
