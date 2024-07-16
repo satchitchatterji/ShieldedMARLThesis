@@ -5,6 +5,7 @@ sys.path.append("../grid_envs")
 import parallel_stag_hunt as psh
 
 warned = False
+USE_CUDA = False
 
 def get_wrapper(env):
     wrappers = {
@@ -48,7 +49,7 @@ class StagHuntSensorWrapper:
             self.num_sensors = num_sensors
         else:
             self.num_sensors = env.observation_spaces[env.agents[0]].shape[0]
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cuda" if torch.cuda.is_available() and USE_CUDA else "cpu")
         self.translation_func = self.stag_counter
 
         self.buffer_size = 50
@@ -98,7 +99,7 @@ class PublicGoodsSensorWrapper:
     def __init__(self, env, num_sensors=None):
         self.env = env
         self.num_sensors = num_sensors
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cuda" if torch.cuda.is_available() and USE_CUDA else "cpu")
         if env.observe_f:
             self.translation_func = self.obs_with_f
         else:
@@ -147,7 +148,7 @@ class CartSafeSensorWrapper:
     def __init__(self, env, num_sensors=None):
         self.env = env
         self.num_sensors = 4
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cuda" if torch.cuda.is_available() and USE_CUDA else "cpu")
         self.translation_func = self.cart_safe_simple
     
     def cart_safe_simple(self, obs):
@@ -178,7 +179,7 @@ class GridNavSensorWrapper:
     def __init__(self, env, num_sensors=None):
         self.env = env
         self.num_sensors = 4
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cuda" if torch.cuda.is_available() and USE_CUDA else "cpu")
         self.translation_func = self.grid_nav_simple
         self.obstruction_map = self.env._env.obstacle_states
     
@@ -214,7 +215,7 @@ class MarkovStagHuntSensorWrapper:
     def __init__(self, env, num_sensors=None):
         self.env = env
         self.num_sensors = 6 # based on stag relative position
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cuda" if torch.cuda.is_available() and USE_CUDA else "cpu")
         self.translation_func = self.stag_surrounded
 
     def one_hot_to_obs(self, one_hot_obs):
@@ -288,7 +289,7 @@ class WaterworldSensorWrapper:
         self.env = env
         self.num_inputs = env.observation_spaces[env.agents[0]].shape[0]
         self.output_type = output_type
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cuda" if torch.cuda.is_available() and USE_CUDA else "cpu")
         if output_type == "invert":
             self.num_sensors = self.num_inputs
             self.translation_func = self.invert_sensor_vals

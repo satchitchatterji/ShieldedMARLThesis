@@ -46,7 +46,8 @@ class DQNShielded(object):
         self.observation_type = 'discrete'
         self.action_type = 'discrete'
         self.learning = True
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device('cpu')
         self.step = 0
         self.on_policy = on_policy
 

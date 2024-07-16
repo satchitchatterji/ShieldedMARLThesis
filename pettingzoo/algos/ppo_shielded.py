@@ -53,7 +53,8 @@ class ActorCriticShielded(nn.Module):
                         nn.Linear(64, 1)
                     )
         
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device('cpu')
         # shield
         self.get_sensor_value_ground_truth = get_sensor_value_ground_truth
         # agents can share a shield if a shield is passed in
@@ -188,8 +189,9 @@ class PPOShielded:
                  **kwargs # made to be comptible with DQN
                  ):
 
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+        # self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cpu")
+        
         self.gamma = gamma
         self.eps_clip = eps_clip
         self.train_epochs = train_epochs
