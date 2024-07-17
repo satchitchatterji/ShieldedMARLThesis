@@ -15,8 +15,8 @@ sys.path.append("../publicgoods")
 from publicgoods_env import parallel_env as public_goods_env
 from publicgoodsmany_env import parallel_env as public_goodsmany_env
 
-# sys.path.append("../single_agent")
-# from pz_wrapper import parallel_env as pz_wrapper_parallel_env
+sys.path.append("../single_agent")
+from pz_wrapper import parallel_env as pz_wrapper_parallel_env
 
 ALL_ENVS = {
     # "simple_spread_v3": simple_spread_v3.parallel_env,
@@ -27,8 +27,8 @@ ALL_ENVS = {
     "centipede": centipede_env,
     "publicgoods": public_goods_env,
     "publicgoodsmany": public_goodsmany_env,
-    # "CartSafe-v0": pz_wrapper_parallel_env,
-    # "GridNav-v0": pz_wrapper_parallel_env,
+    "CartSafe-v0": pz_wrapper_parallel_env,
+    "GridNav-v0": pz_wrapper_parallel_env,
 }
 
 ALL_ENVS_ARGS = {

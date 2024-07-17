@@ -1,3 +1,4 @@
+# amended from https://github.com/arjun-prakash/pz_dilemma/blob/main/src/environments/centipede/centipede_v1.py
 
 from gym import spaces
 import gym
@@ -81,12 +82,12 @@ class parallel_env(ParallelEnv):
         action = actions[self.agents[0]]
 
         reward = self.compute_reward(self.agents[0], action)        
-        next_obs, original_reward, done, info = self._env.step(action)
+        next_obs, original_reward, done, truncation, info = self._env.step(action)
         
         if done:
             reward = 0
 
-        env_truncated = done
+        env_truncated = truncation
         if reward < -100:
             env_truncated = True
 

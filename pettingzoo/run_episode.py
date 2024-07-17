@@ -82,7 +82,7 @@ def eval_episode(env, algo, max_cycles, ep=0, safety_calculator=None, save_wandb
             for agent in algo.agents.keys():
                 if agent not in safety_hist:
                     safety_hist[agent] = []
-                safety_hist[agent].append(safeties[agent])
+                safety_hist[agent].append(safeties[agent].detach().cpu().numpy())
 
     # if the env has a env_update method, call it
     env_updates = {}

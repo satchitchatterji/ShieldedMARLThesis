@@ -1,13 +1,18 @@
 Installation on Linux
 
-git clone git@github.com:satchitchatterji/ThesisPlayground.git
-git clone git@github.com:satchitchatterji/ThesisPLS.git
-
 conda create -n pls python=3.10
 conda activate pls
+
+git clone git@github.com:satchitchatterji/ThesisPlayground.git
+git clone git@github.com:satchitchatterji/ThesisPLS.git
+git clone git@github.com:satchitchatterji/gym-safety.git
 
 cd ThesisPLS
 pip install -e .
 
+cd ../gym-safety
+pip install -e .
+
+pip install numpy==1.23.5
 pip install pettingzoo
-pip install numpy pandas matplotlib tqdm wandb torch
+pip install pandas matplotlib tqdm wandb torch
