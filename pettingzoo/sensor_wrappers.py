@@ -131,7 +131,7 @@ class PublicGoodsSensorWrapper:
             mult = 0.5
         else:
             mult = (mult - self.values_low) / (self.values_high - self.values_low)
-        
+        # print(np.append(agent_other, mult).astype(np.float32))
         return torch.tensor(np.append(agent_other, mult).astype(np.float32), dtype=torch.float32, device=self.device)
     
     def __call__(self, x):
