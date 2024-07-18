@@ -149,41 +149,21 @@ class PublicGoodsManySensorWrapper:
     """
     def __init__(self, env, num_sensors=None):
         self.env = env
-        self.num_sensors = num_sensors
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cuda" if torch.cuda.is_available() and USE_CUDA else "cpu")
+        self.num_sensors = 1
         if env.observe_f:
             self.translation_func = self.obs_with_f
         else:
             self.translation_func = self.obs_without_f
-            
-        self._reset_values()
-
-    def _reset_values(self):
-        self.values_low = None
-        self.values_high = None
 
     def obs_without_f(self, obs):
         return obs
     
     def obs_with_f(self, obs):
-        if self.env.num_moves == 0:
-            self._reset_values()
         obs = obs.cpu().numpy()
-        agent_other = obs[:-1]
-        mult = obs[-1] # todo: update this to pdf
-        if self.values_low is None:
-            self.values_low = mult
-            self.values_high = mult
-        else:
-            self.values_low = min(mult, self.values_low)
-            self.values_high = max(mult, self.values_high)
-        
-        if self.values_high == self.values_low:
-            mult = 0.5
-        else:
-            mult = (mult - self.values_low) / (self.values_high - self.values_low)
-        
-        return torch.tensor(np.append(agent_other, mult).astype(np.float32), dtype=torch.float32, device=self.device)
+        agent_other = obs[0]
+        # return % of cooperating agents
+        return torch.tensor(agent_other, dtype=torch.float32, device=self.device)
 
     def __call__(self, x):
         # TODO: batch processing
