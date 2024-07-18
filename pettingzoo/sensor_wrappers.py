@@ -4,6 +4,8 @@ import sys
 sys.path.append("../grid_envs")
 import parallel_stag_hunt as psh
 
+from util import OnlineStats, normalized_pgg_distance
+
 warned = False
 USE_CUDA = False
 
@@ -16,7 +18,7 @@ def get_wrapper(env):
         "markov_stag_hunt": MarkovStagHuntSensorWrapper,
         "centipede": IdentitySensorWrapper,
         "publicgoods": PublicGoodsSensorWrapper,
-        "publicgoodsmany": PublicGoodsSensorWrapper,
+        "publicgoodsmany": PublicGoodsManySensorWrapper,
         "CartSafe-v0": CartSafeSensorWrapper,
         "GridNav-v0": GridNavSensorWrapper,
     }
@@ -108,6 +110,55 @@ class PublicGoodsSensorWrapper:
         self._reset_values()
 
     def _reset_values(self):
+        self.stats = OnlineStats()
+        self.ticker = 0
+
+    def obs_without_f(self, obs):
+        return obs
+    
+    def obs_with_f(self, obs):
+        if self.env.num_moves == 0:
+            self._reset_values()
+        obs = obs.cpu().numpy()
+        agent_other = obs[:-1]
+        agent_identity = int((self.ticker*2)%2)
+
+        mult = obs[-1] # todo: update this to pdf
+        if agent_identity == 0 and self.ticker > 0:
+            self.stats.update(mult)
+        self.ticker += 0.5
+        if self.ticker > 2:
+            mult_uncertainty = normalized_pgg_distance(mult, self.stats.mean, self.stats.stddev())
+        else:
+            mult_uncertainty = 1
+        mult_high = self.stats.mean > 1
+        returnval = np.hstack([agent_other, [mult_uncertainty, mult_high]]).astype(dtype=np.float32)
+        # print(self.stats.mean, self.stats.stddev(), returnval)
+        return torch.tensor(returnval, dtype=torch.float32, device=self.device)
+    
+    def __call__(self, x):
+        # TODO: batch processing
+        if len(x.shape) == 1:
+            return self.translation_func(x)
+        else:
+            return torch.stack([self.translation_func(x[i]) for i in range(x.shape[0])])
+
+class PublicGoodsManySensorWrapper:
+    """
+    Sensor wrapper for the Public Goods Game environment. 
+    """
+    def __init__(self, env, num_sensors=None):
+        self.env = env
+        self.num_sensors = num_sensors
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        if env.observe_f:
+            self.translation_func = self.obs_with_f
+        else:
+            self.translation_func = self.obs_without_f
+            
+        self._reset_values()
+
+    def _reset_values(self):
         self.values_low = None
         self.values_high = None
 
@@ -131,9 +182,9 @@ class PublicGoodsSensorWrapper:
             mult = 0.5
         else:
             mult = (mult - self.values_low) / (self.values_high - self.values_low)
-        # print(np.append(agent_other, mult).astype(np.float32))
+        
         return torch.tensor(np.append(agent_other, mult).astype(np.float32), dtype=torch.float32, device=self.device)
-    
+
     def __call__(self, x):
         # TODO: batch processing
         if len(x.shape) == 1:

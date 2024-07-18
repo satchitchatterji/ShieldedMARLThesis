@@ -68,8 +68,8 @@ parser.add_argument("--shield_version",
 
 parser.add_argument("--shield_eval_version",
                     type=int,
-                    default=0,
-                    help="Version of shield to use to evaluate agents for a given env."
+                    default=-1,
+                    help="Version of shield to use to evaluate agents for a given env (default = shield_version)."
                     )
 
 parser.add_argument("--shielded_ratio",
