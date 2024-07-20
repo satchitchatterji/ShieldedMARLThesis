@@ -4,7 +4,7 @@ import sys
 sys.path.append("../grid_envs")
 import parallel_stag_hunt as psh
 
-from util import OnlineStats, normalized_pgg_distance
+from sensor_util import OnlineStats, normalized_pgg_distance
 
 warned = False
 USE_CUDA = False
