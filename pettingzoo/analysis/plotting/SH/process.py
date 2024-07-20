@@ -1,9 +1,9 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
-df = pd.read_csv('wandb_export_2024-07-19T21_58_03.895+02_00.csv'); topic = "mean_reward"
+# df = pd.read_csv('wandb_export_2024-07-19T21_58_03.895+02_00.csv'); topic = "mean_reward"
 # df = pd.read_csv('wandb_export_2024-07-19T21_57_52.672+02_00.csv'); topic = "eval_mean_safety"
-# df = pd.read_csv('wandb_export_2024-07-19T21_57_38.021+02_00.csv'); topic = "eval_mean_reward"
+df = pd.read_csv('wandb_export_2024-07-19T21_57_38.021+02_00.csv'); topic = "eval_mean_reward"
 
 percent_rolling = 0.1
 
@@ -69,7 +69,7 @@ plt.tight_layout()
 
 if topic == "mean_reward":
     ax.set_ylabel("Mean Reward")
-    ax.set_title("Mean Reward per Episode (Training)")
+    ax.set_title("Mean Reward per Episode Step (Training)")
     plt.legend()
     plt.savefig("training_sh.png", dpi=300, bbox_inches="tight")
 
@@ -80,7 +80,7 @@ if topic == "eval_mean_safety":
 
 if topic == "eval_mean_reward":
     ax.set_ylabel("Mean Reward")
-    ax.set_title("Mean Reward per Episode (Evaluation)")
+    ax.set_title("Mean Reward per Episode Step (Evaluation)")
     plt.savefig("eval_sh.png", dpi=300, bbox_inches="tight")
 
 

@@ -1,7 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
-df = pd.read_csv('wandb_export_2024-07-01T14_20_08.782+02_00.csv'); topic = "mean_reward"
+# df = pd.read_csv('wandb_export_2024-07-01T14_20_08.782+02_00.csv'); topic = "mean_reward"
 # df = pd.read_csv('wandb_export_2024-07-01T14_19_47.246+02_00.csv'); topic = "eval_mean_safety"
 # df = pd.read_csv('wandb_export_2024-07-01T15_15_17.076+02_00.csv'); topic = "eval_mean_reward"
 
@@ -55,7 +55,7 @@ plt.tight_layout()
 
 if topic == "mean_reward":
     ax.set_ylabel("Mean Reward")
-    ax.set_title("Mean Reward per Episode (Training)")
+    ax.set_title("Mean Reward per Episode Step (Training)")
     ax.legend()
     plt.savefig("training_pd.png", dpi=300, bbox_inches="tight")
 
@@ -66,7 +66,7 @@ if topic == "eval_mean_safety":
 
 if topic == "eval_mean_reward":
     ax.set_ylabel("Mean Reward")
-    ax.set_title("Mean Reward per Episode (Evaluation)")
+    ax.set_title("Mean Reward per Episode Step (Evaluation)")
     plt.savefig("eval_pd.png", dpi=300, bbox_inches="tight")
 
 
