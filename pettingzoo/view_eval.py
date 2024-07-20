@@ -1,3 +1,5 @@
+raise RuntimeError("Script broken in new Linux installation - needs to be fixed by downgrading to gym<=0.21.0")
+
 import os
 import datetime
 import pickle as pk
