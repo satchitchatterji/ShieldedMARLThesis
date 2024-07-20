@@ -1,6 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-window = 25
+window = 50
 df = pd.read_csv('wandb_export_2024-06-27T15_09_01.463+02_00.csv'); topic = "total_reward_mean"
 # df = pd.read_csv('wandb_export_2024-06-27T15_09_07.687+02_00.csv'); topic = "eval_total_reward_mean"
 # df = pd.read_csv('wandb_export_2024-06-27T15_09_14.977+02_00.csv'); topic = "eval_mean_safety"
