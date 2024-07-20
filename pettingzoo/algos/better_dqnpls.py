@@ -412,10 +412,10 @@ class DQNShielded(object):
                     target[cur_action] = cur_reward + self.gamma*(max(next_Q_vals))
 
             y_train.append(target)
-    
-        X_train = np.array(X_train) 
-        y_train = np.array(y_train)
-        base_loss = self.base_loss_fn(self.func_approx(torch.Tensor(X_train).to(self.device)), torch.Tensor(y_train).to(self.device))
+
+        X_train = torch.vstack(X_train).to(self.device)
+        y_train = torch.vstack(y_train).to(self.device)
+        base_loss = self.base_loss_fn(self.func_approx(X_train), y_train)
 
         cur_states = torch.stack([self.history[int(i)][STATE] for i in current_batch]).to(self.device).float()
         cur_action_dist = torch.stack([self.history[int(i)][ACTION_DIST] for i in current_batch]).to(self.device).float()
