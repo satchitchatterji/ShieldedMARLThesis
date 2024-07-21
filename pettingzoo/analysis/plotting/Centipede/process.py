@@ -2,9 +2,18 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import os
 
-# topic = "total_reward_mean"
-# topic = "eval_mean_safety"
-# topic = "eval_total_reward_mean"
+
+SMALL_SIZE = 14
+MEDIUM_SIZE = 16
+BIGGER_SIZE = 18
+
+plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
+plt.rc('axes', titlesize=MEDIUM_SIZE)     # fontsize of the axes title
+plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
+plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
+plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
 
 percent_rolling = 0.1
 
@@ -20,9 +29,14 @@ group_ppo = [ippo_cols, sippo_cols]
 group_softmax = [explore_policy_softmax_IQL, explore_policy_softmax_SIQL]
 group_e_greedy = [explore_policy_e_greedy_IQL, explore_policy_e_greedy_SIQL]
 
-# labels = ["IPPO", "SIPPO"]; save_ext = "_cent_ppo.png"; plot_group = group_ppo
+
+# topic = "total_reward_mean"
+# topic = "eval_mean_safety"
+topic = "eval_total_reward_mean"
+
+labels = ["IPPO", "SIPPO"]; save_ext = "_cent_ppo.png"; plot_group = group_ppo
 # labels = ["IQL (softmax)", "SIQL (softmax)"]; save_ext = "_cent_softmax.png"; plot_group = group_softmax
-labels = ["IQL ($\epsilon$-greedy)", "SIQL ($\epsilon$-greedy)"]; save_ext = "_cent_e_greedy.png"; plot_group = group_e_greedy
+# labels = ["IQL ($\epsilon$-greedy)", "SIQL ($\epsilon$-greedy)"]; save_ext = "_cent_e_greedy.png"; plot_group = group_e_greedy
 
 # get all csv files in directory
 files = os.listdir()

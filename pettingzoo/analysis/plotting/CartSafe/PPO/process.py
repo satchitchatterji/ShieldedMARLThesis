@@ -1,8 +1,21 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-window = 50
-df = pd.read_csv('wandb_export_2024-06-27T15_09_01.463+02_00.csv'); topic = "total_reward_mean"
-# df = pd.read_csv('wandb_export_2024-06-27T15_09_07.687+02_00.csv'); topic = "eval_total_reward_mean"
+percent_rolling = 0.1
+
+SMALL_SIZE = 14
+MEDIUM_SIZE = 16
+BIGGER_SIZE = 18
+
+plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
+plt.rc('axes', titlesize=MEDIUM_SIZE)     # fontsize of the axes title
+plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
+plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
+plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
+
+# df = pd.read_csv('wandb_export_2024-06-27T15_09_01.463+02_00.csv'); topic = "total_reward_mean"
+df = pd.read_csv('wandb_export_2024-06-27T15_09_07.687+02_00.csv'); topic = "eval_total_reward_mean"
 # df = pd.read_csv('wandb_export_2024-06-27T15_09_14.977+02_00.csv'); topic = "eval_mean_safety"
 cols = [x for x in df.columns if x.endswith(topic)]
 df = df[cols]
@@ -25,6 +38,7 @@ sippo_2_cols = ["SIPPO_2024-06-26_235639", "SIPPO_2024-06-26_235628", "SIPPO_202
 sippo_05_cols = ["SIPPO_2024-06-26_235333", "SIPPO_2024-06-26_235317", "SIPPO_2024-06-26_235237", "SIPPO_2024-06-26_235229", "SIPPO_2024-06-26_235230"]
 sippo_1_cols = ["SIPPO_2024-06-26_224116", "SIPPO_2024-06-26_222807", "SIPPO_2024-06-26_222743", "SIPPO_2024-06-26_222740", "SIPPO_2024-06-26_222648"]
 
+window = int(len(df)*percent_rolling)
 
 ippo_df = df[ippo_cols]
 sippo_05_df = df[[x+f" - {topic}" for x in sippo_05_cols]]
@@ -57,11 +71,11 @@ ax.plot(sippo_2_df["mean"], label=r"PLPG ($\alpha=2.0$)", color=colors[3], lines
 ax.fill_between(sippo_2_df.index, sippo_2_df["mean"] - sippo_2_df["std"], sippo_2_df["mean"] + sippo_2_df["std"], alpha=0.2, color=colors[3])
 
 ax.set_xlabel("Episode")
-ax.set_ylabel("Total Reward")
-ax.legend()
-ax.set_title("Total Reward per Episode (Training)")
+ax.set_ylabel("Reward")
+ax.set_title("Mean Reward per Episode (Evaluation)")
 ax.grid()
 
+# ax.legend()
 plt.tight_layout()
-# plt.savefig("training_CartSafe-v0.png", dpi=300, bbox_inches="tight")
-plt.show()
+plt.savefig("eval_CartSafe-v0_ppo.png", dpi=300, bbox_inches="tight")
+# plt.show()
