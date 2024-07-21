@@ -20,7 +20,8 @@ from run_episode import run_episode, eval_episode
 np.random.seed(config.seed)
 torch.manual_seed(config.seed)
 
-system = os.name
+# system = os.name
+system = "nt"
 # cur_time = time.time()
 now = datetime.datetime.now()
 cur_time = now.strftime("%Y-%m-%d_%H%M%S")
