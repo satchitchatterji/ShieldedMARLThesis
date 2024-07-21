@@ -1,6 +1,10 @@
 import pandas as pd
 import pprint
 
+# get unique values for each field
+def name(a,e,o,s):
+    return f"{a}_{e}_{o}_{s}"
+
 def get_non_empty_groups():
 
     df = pd.read_csv("project.csv")
@@ -13,9 +17,7 @@ def get_non_empty_groups():
     config_df["name"] = df["name"]
 
     group_fields = ["algo", "eval_policy", "on_policy", "shield_alpha"]
-    # get unique values for each field
-    def name(a,e,o,s):
-        return f"{a}_{e}_{o}_{s}"
+
 
     runs = {}
     # Iterate through each unique combination of field values
