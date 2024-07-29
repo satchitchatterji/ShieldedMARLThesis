@@ -190,8 +190,8 @@ class CartSafeSensorWrapper:
         x = obs[0]
 
         x_cost = np.abs(x) > self.env._env.x_constraint
-        x_pos = np.abs(obs[0])  / self.env._env.x_threshold
-        left = obs[0] < 0
+        x_pos = np.abs(x-self.env._env.x_threshold/2)  / (self.env._env.x_threshold/2)
+        left = x < 0
 
         return torch.tensor(np.array([x_cost, x_pos, left, 1-left], dtype=np.float32), dtype=torch.float32, device=self.device)
 
