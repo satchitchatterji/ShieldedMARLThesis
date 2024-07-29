@@ -183,6 +183,8 @@ class PPOShielded:
                  alpha=0,
                  policy_safety_params={},
                  policy_kw_args={},
+                 vf_coef=0.5,
+                 entropy_coef=0.01,
                  **kwargs # made to be comptible with DQN
                  ):
 
@@ -191,7 +193,9 @@ class PPOShielded:
         self.gamma = gamma
         self.eps_clip = eps_clip
         self.train_epochs = train_epochs
-        
+        self.vf_coef = vf_coef
+        self.entropy_coef = entropy_coef
+
         self.buffer = RolloutBuffer()
 
         self.lr_actor = lr_actor
@@ -329,7 +333,7 @@ class PPOShielded:
             ###############################################################
 
             # final loss of clipped objective PPO
-            loss = -torch.min(surr1, surr2) + 0.5 * self.MseLoss(state_values, rewards) - 0.01 * dist_entropy + self.alpha * safety_loss
+            loss = -torch.min(surr1, surr2) + self.vf_coef * self.MseLoss(state_values, rewards) - self.entropy_coef * dist_entropy + self.alpha * safety_loss
             
             # take gradient step
             self.optimizer.zero_grad()

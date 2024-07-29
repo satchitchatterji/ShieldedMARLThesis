@@ -1,5 +1,5 @@
 from .base import BaseMARLAlgo
-from .dqn_shielded import DQNShielded
+from .better_dqnpls import DQNShielded
 
 class PSIQL(BaseMARLAlgo):
     def __init__(self, env, observation_space, n_discrete_actions, action_wrapper, algorithm_params, **kwargs):

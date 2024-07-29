@@ -103,7 +103,7 @@ Param selection
 
 
 ppo_params = ["update_timestep", "train_epochs", "gamma", "eps_clip", "lr_actor", "lr_critic"]
-dqn_params = ["update_timestep", "train_epochs", "gamma", "buffer_size", "batch_size", "lr", "eps_decay", "eps_min", "tau", "target_update_type", "explore_policy", "eval_policy"]
+dqn_params = ["update_timestep", "train_epochs", "gamma", "buffer_size", "batch_size", "lr", "eps_decay", "eps_min", "tau", "target_update_type", "explore_policy", "eval_policy", "on_policy"]
 extracted_ppo = {k: v for k, v in vars(config).items() if k in ppo_params}
 extracted_dqn = {k: v for k, v in vars(config).items() if k in dqn_params}
 all_algo_params = {k: v for k, v in vars(config).items() if k in ppo_params or k in dqn_params}
@@ -130,16 +130,37 @@ algo = ALL_ALGORITHMS[algo_name](env=env,
 
 ############################################ SAFETY CALC ############################################
 
-safety_calc = SafetyCalculator(sh_params)
+shield_selector_calc = ShieldSelector(env_name=env_name, 
+                                 n_actions=action_wrapper.num_actions, 
+                                 n_sensors=sensor_wrapper.num_sensors,
+                                 filename=config.shield_file,
+                                 version=config.shield_eval_version
+                                 )
+sh_params_calc = sh_params.copy()
+sh_params_calc.update({"shield_program": shield_selector_calc.file})
+
+safety_calc = SafetyCalculator(sh_params_calc)
 # safety_calc = None
 
+############################################ SAVE CONFIG ############################################
+config_dict = vars(config)
+config_dict.update(env_creator_args)
+
+# safe config dict to json file
+import json
+if not os.path.exists(f"configs/{env_name}/{algo_name}/{cur_time}.json"):
+    os.makedirs(f"configs/{env_name}/{algo_name}", exist_ok=True)
+with open(f"configs/{env_name}/{algo_name}/{cur_time}.json", "w") as f:
+    s = json.dumps(config_dict, indent=4)
+    f.write(s)
+    
 ############################################ TRAINING ############################################
 
 reward_hists = []
 eval_hists = []
 eval_safeties = []
 eval_episodes = []
-wandb.init(project=f"{system}_{env_name}", name=f"{algo_name}_{cur_time}", config=vars(config))
+wandb.init(project=f"{system}_{env_name}", name=f"{algo_name}_{cur_time}", config=config_dict)
 
 ep=0
 try:
@@ -202,13 +223,7 @@ with open(f"histories/{env_name}/{algo_name}/{cur_time}_eval_eps.pk", "wb") as f
 
 print("Training complete. Fileref:", cur_time)
 print("Runtime:", datetime.datetime.now() - now)
-# safe config dict to json file
-import json
-if not os.path.exists(f"configs/{env_name}/{algo_name}/{cur_time}.json"):
-    os.makedirs(f"configs/{env_name}/{algo_name}", exist_ok=True)
-with open(f"configs/{env_name}/{algo_name}/{cur_time}.json", "w") as f:
-    s = json.dumps(vars(config), indent=4)
-    f.write(s)
+
 
 ############################################ PLOT MEAN REWARDS ############################################
 

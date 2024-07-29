@@ -1,3 +1,5 @@
+raise RuntimeError, "This file is not meant to be executed. Please use DQN with on_policy=True instead."
+
 import numpy as np
 import random
 

@@ -22,7 +22,7 @@ hunt :- action(Dir), sensor(Dir).
 % waiting is fine if stag is near and there is no other agent
 % hunt_alone :- action(stay), stag_alone
 
-safe_next :- hunt, stag_surrounded.
+safe_next :- \+hunt, stag_surrounded.
 safe_next :- \+stag_surrounded.
 % safe_next :- hunt_alone.
 % safe_next :- \+hunt_alone.

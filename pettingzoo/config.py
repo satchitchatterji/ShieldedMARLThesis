@@ -66,6 +66,12 @@ parser.add_argument("--shield_version",
                     help="Version of shield to use for a given env."
                     )
 
+parser.add_argument("--shield_eval_version",
+                    type=int,
+                    default=0,
+                    help="Version of shield to use to evaluate agents for a given env."
+                    )
+
 parser.add_argument("--shielded_ratio",
                     type=float,
                     default=1.0,
@@ -73,9 +79,8 @@ parser.add_argument("--shielded_ratio",
                     )
 
 parser.add_argument("--shield_diff",
-                    type=bool,
-                    default=True,
-                    help="Whether to use differentiable shield (PLS vs VSRL)."
+                    action="store_true",
+                    help="Use differentiable shield (PLS vs VSRL)."
                     )
 
 parser.add_argument("--shield_eps",
@@ -176,6 +181,11 @@ parser.add_argument("--eval_policy",
                     type=str,
                     default="greedy",
                     help="Exploitation strategy to use. Options are 'greedy' and 'softmax'."
+                    )
+
+parser.add_argument("--on_policy",
+                    action="store_true",
+                    help="Use on-policy updates for DQN."
                     )
 
 

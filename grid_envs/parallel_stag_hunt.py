@@ -17,7 +17,7 @@ STAY = 4
 MOVES = [LEFT, RIGHT, UP, DOWN, STAY]
 
 # board params
-STAG_MOVE_PROB = 0.75
+STAG_MOVE_PROB = 0
 NUM_ITERS = 10
 GRID_SIZE = (5, 5)
 
@@ -353,6 +353,9 @@ class parallel_env(ParallelEnv):
             return obs
         return obs.reshape(-1)
 
+    def env_logging_info(self, suffix):
+        return {k+suffix:v for k,v in self.results.items()}
+
     def step(self, actions):
         """
         step(action) takes in an action for each agent and should return the
@@ -375,8 +378,8 @@ class parallel_env(ParallelEnv):
 
         self.num_moves += 1
         env_truncation = self.num_moves >= self.max_cycles
-        if env_truncation:
-            print(self.results)
+        # if env_truncation:
+        #     print(self.results)
         truncations = {agent: env_truncation for agent in self.agents}
         observations = {agent: self.process_obs(self.grid, agent) for agent in self.agents}
         self.state = self.grid

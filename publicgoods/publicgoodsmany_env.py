@@ -23,24 +23,24 @@ class parallel_env(ParallelEnv):
 
     metadata = {'render.modes': ['human'], "name": "publicgoodsmany", "is_parallelizable": True}
 
-    def __init__(self, n_agents=2, initial_endowment=1, max_cycles=50,  mult_factor=None, observe_f=True, rand_f_between=None, render_mode=None):
+    def __init__(self, n_agents=2, initial_endowment=1, max_cycles=50,  mult_factor=None, observe_f=True, f_params=None, render_mode=None):
         self.agents = ["player_" + str(r) for r in range(n_agents)]
         self.possible_agents = self.agents[:]
         self.max_cycles = max_cycles
         self.observe_f = observe_f
 
         self.static_mult_factor = mult_factor
-        self.rand_f_between = rand_f_between
+        self.f_params = f_params
         self.rand_mult_factor = None
         self._mult_factor = None
 
         print('Public Goods Game!')
-        if self.static_mult_factor is not None and self.rand_f_between is not None:
-            print("Warning: both mult_factor and rand_f_between are set. Using mult_factor.")
-            self.rand_f_between = None
+        if self.static_mult_factor is not None and self.f_params is not None:
+            print("Warning: both mult_factor and f_params are set. Using mult_factor.")
+            self.f_params = None
             self._mult_factor = self.static_mult_factor
-        elif self.static_mult_factor is None and self.rand_f_between is None:
-            print("Warning: neither mult_factor nor rand_f_between are set! Exiting...")
+        elif self.static_mult_factor is None and self.f_params is None:
+            print("Warning: neither mult_factor nor f_params are set! Exiting...")
             exit(1)
 
         self.state = {agent: MOVES["NONE"] for agent in self.agents}
@@ -67,7 +67,7 @@ class parallel_env(ParallelEnv):
         if self.static_mult_factor is not None:
             self._mult_factor = self.static_mult_factor
         else:
-            self._mult_factor = np.random.uniform(self.rand_f_between[0], self.rand_f_between[1])
+            self._mult_factor = np.random.normal(*self.f_params)
         
     def reset(self):
         self.agents = self.possible_agents[:]

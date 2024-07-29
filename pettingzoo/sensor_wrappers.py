@@ -4,10 +4,12 @@ import sys
 sys.path.append("../grid_envs")
 import parallel_stag_hunt as psh
 
+warned = False
+
 def get_wrapper(env):
     wrappers = {
         "waterworld": WaterworldSensorWrapper,
-        "simple_stag_v0": IdentitySensorWrapper,
+        "simple_stag_v0": StagHuntSensorWrapper,
         "simple_pd_v0": IdentitySensorWrapper,
         "simple_chicken_v0": IdentitySensorWrapper,
         "markov_stag_hunt": MarkovStagHuntSensorWrapper,
@@ -36,6 +38,59 @@ class IdentitySensorWrapper:
     def __call__(self, x):
         return x
     
+class StagHuntSensorWrapper:
+    """
+    Sensor wrapper for the Stag Hunt environment. 
+    """
+    def __init__(self, env, num_sensors=None):
+        self.env = env
+        if num_sensors is not None:
+            self.num_sensors = num_sensors
+        else:
+            self.num_sensors = env.observation_spaces[env.agents[0]].shape[0]
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.translation_func = self.stag_counter
+
+        self.buffer_size = 50
+        self.stag_counter = [list(), list()]
+        self.hare_counter = [list(), list()]
+        self.ticker = 0
+
+    def stag_counter(self, obs):
+        global warned
+
+        obs = obs.cpu().numpy()
+        agent_identity = int((self.ticker*2)%2)
+        self.ticker += 0.5 # increment by 0.5 since there are two agents in the environment
+        self.stag_counter[agent_identity].append(obs[0])
+        self.hare_counter[agent_identity].append(obs[1])
+
+        if len(self.stag_counter[agent_identity]) > self.buffer_size:
+            self.stag_counter[agent_identity].pop(0)
+            self.hare_counter[agent_identity].pop(0)
+        
+        true_eq = [0.6,0.4]
+        if not warned:
+            print(">>> WARNING: (sensor_wrappers.py) Using hardcoded true equilibrium for Stag Hunt environment: ", true_eq, " <<<")
+            warned = True
+
+        stag_percent = np.mean(self.stag_counter[agent_identity])
+        hare_percent = np.mean(self.hare_counter[agent_identity])
+
+        # print(f"Agent: {agent_identity}, Stag: {stag_percent}, Hare: {hare_percent}")
+
+        stag_diff = np.abs(stag_percent - true_eq[0])
+        hare_diff = np.abs(hare_percent - true_eq[1])
+
+        return torch.tensor(np.array([stag_diff, hare_diff], dtype=np.float32), dtype=torch.float32, device=self.device)
+        
+    def __call__(self, x):
+        # TODO: batch processing
+        if len(x.shape) == 1:
+            return self.translation_func(x)
+        else:
+            return torch.stack([self.translation_func(x[i]) for i in range(x.shape[0])])
+        
 class PublicGoodsSensorWrapper:
     """
     Sensor wrapper for the Public Goods Game environment. 
@@ -63,12 +118,11 @@ class PublicGoodsSensorWrapper:
             self._reset_values()
         obs = obs.cpu().numpy()
         agent_other = obs[:-1]
-        mult = obs[-1]
+        mult = obs[-1] # todo: update this to pdf
         if self.values_low is None:
             self.values_low = mult
             self.values_high = mult
         else:
-            
             self.values_low = min(mult, self.values_low)
             self.values_high = max(mult, self.values_high)
         

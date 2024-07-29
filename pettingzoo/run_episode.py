@@ -29,12 +29,21 @@ def run_episode(env, algo, max_cycles, ep=0):
             if agent not in reward_hist:
                 reward_hist[agent] = []
             reward_hist[agent].append(rewards[agent])
-        
-    update_dict = {}
+    
+    # if the env has a env_update method, call it
+    env_updates = {}
+    if hasattr(env, "env_logging_info"):
+        env_updates = env.env_logging_info(suffix="_training")
+
+    update_dict = env_updates
     # mean reward per agent
     update_dict.update({f"mean_reward_{agent}": np.mean(reward_hist[agent]) for agent in reward_hist})
     # mean reward overall
     update_dict.update({"mean_reward": np.mean([np.mean(reward_hist[agent]) for agent in reward_hist])})
+    # total reward per agent
+    update_dict.update({f"total_reward_{agent}": np.sum(reward_hist[agent]) for agent in reward_hist})
+    # total reward overall
+    update_dict.update({"total_reward_mean": np.mean([np.sum(reward_hist[agent]) for agent in reward_hist])})
     wandb.log(update_dict)
     return reward_hist
 
@@ -75,11 +84,20 @@ def eval_episode(env, algo, max_cycles, ep=0, safety_calculator=None, save_wandb
                     safety_hist[agent] = []
                 safety_hist[agent].append(safeties[agent])
 
-    update_dict = {}
+    # if the env has a env_update method, call it
+    env_updates = {}
+    if hasattr(env, "env_logging_info"):
+        env_updates = env.env_logging_info(suffix="_eval")
+
+    update_dict = env_updates
     # mean reward per agent
     update_dict.update({f"eval_mean_reward_{agent}": np.mean(reward_hist[agent]) for agent in reward_hist})
     # mean reward overall
     update_dict.update({"eval_mean_reward": np.mean([np.mean(reward_hist[agent]) for agent in reward_hist])})
+    # total reward per agent
+    update_dict.update({f"eval_total_reward_{agent}": np.sum(reward_hist[agent]) for agent in reward_hist})
+    # total reward overall
+    update_dict.update({"eval_total_reward_mean": np.mean([np.sum(reward_hist[agent]) for agent in reward_hist])})
     # mean safety per agent
     if safety_calculator is not None:
         update_dict.update({f"eval_mean_safety_{agent}": np.mean(safety_hist[agent]) for agent in safety_hist})

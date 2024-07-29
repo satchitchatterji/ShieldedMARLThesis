@@ -1,5 +1,5 @@
 from .base import BaseMARLAlgo
-from .dqn_shielded import DQNShielded
+from .better_dqnpls import DQNShielded
 import numpy as np
 
 class SIQL(BaseMARLAlgo):
