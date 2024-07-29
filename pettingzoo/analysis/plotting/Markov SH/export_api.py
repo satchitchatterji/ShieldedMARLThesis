@@ -5,7 +5,9 @@ api = wandb.Api()
 
 # Project is specified by <entity/project-name>
 project = "satchat/nt_markov_stag_hunt"
-keys = ["stag_training", "stag_pen_training", "plant_training"]
+keys = ["plant_training", "stag_training", "stag_pen_training", "total_reward_mean", "eval_mean_safety", "eval_total_reward_mean"]
+
+redownload = False
 
 runs = api.runs(project)
 
@@ -36,15 +38,29 @@ dfs = {key: list() for key in keys}
 for run in tqdm.tqdm(runs, desc="Downloading runs"):
     name = run.name
     for key in keys:
-        try:
-            col_name = f"{name} - {key}"
-            hist_df = run.history(keys=[key], pandas=True)
-            hist_df = hist_df.rename(columns={key: f"{name} - {key}"})
-            dfs[key].append(hist_df[col_name])
-        except KeyError as e:
-            print(f"Key Error: {e}")
+        col_name = f"{name} - {key}"
+        
+        if not redownload:
+            existing_df = pd.read_csv(f"{key}.csv")
+            if col_name in existing_df.columns:
+                dfs[key].append(existing_df[col_name])
+            else:
+                try:
+                    hist_df = run.history(keys=[key], pandas=True)
+                    hist_df = hist_df.rename(columns={key: f"{name} - {key}"})
+                    dfs[key].append(hist_df[col_name])
+                except KeyError as e:
+                    print(f"Key Error: {e}")
+
+        else:
+            try:
+                hist_df = run.history(keys=[key], pandas=True)
+                hist_df = hist_df.rename(columns={key: f"{name} - {key}"})
+                dfs[key].append(hist_df[col_name])
+            except KeyError as e:
+                print(f"Key Error: {e}")
+        
 
 for key in keys:
     df = pd.concat(dfs[key], axis=1)
     df.to_csv(f"{key}.csv")
-

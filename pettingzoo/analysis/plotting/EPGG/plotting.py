@@ -27,9 +27,9 @@ groups = get_non_empty_groups()
 
 mu = str([0.5,1])
 group_0_keys = [name("IPPO", mu, 1), name("SIPPO", mu, 3)]
-mu = str([1.5,1])
-group_1_keys = [name("IPPO", mu, 1), name("SIPPO", mu, 3)]
 mu = str([1,1])
+group_1_keys = [name("IPPO", mu, 1), name("SIPPO", mu, 3)]
+mu = str([1.5,1])
 group_2_keys = [name("IPPO", mu, 1), name("SIPPO", mu, 3)]
 mu = str([2.5,1])
 group_3_keys = [name("IPPO", mu, 1), name("SIPPO", mu, 3)]
@@ -89,7 +89,7 @@ for topic in topics:
         fig, ax = plt.subplots()
 
         for i, df in enumerate(dfs):
-            x = df.rolling(window).mean().index
+            x = df.rolling(window).mean().index if topic == "mean_reward" else df.rolling(window).mean().index*10
             ax.plot(x, df["mean"].rolling(window).mean(), label=labels[i], color=colors[i])
             ax.fill_between(x, (df["mean"] - df["std"]).rolling(window).mean(), (df["mean"] + df["std"]).rolling(window).mean(), alpha=0.2, color=colors[i])
 

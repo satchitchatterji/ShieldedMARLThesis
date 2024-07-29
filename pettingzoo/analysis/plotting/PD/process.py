@@ -36,6 +36,7 @@ colors = prop_cycle.by_key()['color']
 ippo_cols = [cols[i] for i in range(len(cols)) if cols[i][:firstunderscore[i]] == "IPPO"]
 sippo_cols = [cols[i] for i in range(len(cols)) if cols[i][:firstunderscore[i]] == "SIPPO"]
 print(ippo_cols)
+print(sippo_cols)
 
 
 ippo_df = df[ippo_cols]

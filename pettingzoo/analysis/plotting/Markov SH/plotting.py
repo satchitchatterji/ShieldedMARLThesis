@@ -7,6 +7,7 @@ SMALL_SIZE = 14
 MEDIUM_SIZE = 16
 BIGGER_SIZE = 18
 
+
 plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
 plt.rc('axes', titlesize=MEDIUM_SIZE)     # fontsize of the axes title
 plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
@@ -19,7 +20,7 @@ plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
 import warnings
 warnings.filterwarnings("ignore")
 
-topics = ["plant_training", "stag_training", "stag_pen_training"]
+topics = ["plant_training", "stag_training", "stag_pen_training", "total_reward_mean", "eval_mean_safety", "eval_total_reward_mean"]
 
 percent_rolling = 0.1
 
@@ -27,15 +28,17 @@ groups = get_non_empty_groups()
 
 # baseline for both: IPPO
 # Partial shield
-group_0_keys = [name(1.0, "IPPO", 0), name(0.5, "SIPPO", 7), name(0.5, "SMAPPO", 7)]#, name(0.5, "SACSPPO", 7)]
+group_0_keys = [name(1.0, "IPPO", 0), name(0.5, "SIPPO", 7), name(0.5, "SMAPPO", 7), name(0.5, "SACSPPO", 7)]
 group_1_keys = [name(1.0, "IPPO", 0), name(1.0, "SIPPO", 0), name(1.0, "SIPPO", 7)]#, name(0.5, "SACSPPO", 7)]
 
 group_keys = [group_0_keys, group_1_keys]
 group_labels = ["partial_shield", "full_shield"]
 group_pick = 1
 
-labels = ["IPPO", "SIPPO", "SCSPPO", "SPSPPO"]
-labels = ["IPPO", r"SIPPO ($\mathcal{T}_{weak}$)", r"SIPPO ($\mathcal{T}_{strong}$)"]
+labels_part = ["IPPO", "SIPPO", "SCSPPO", "SPSPPO"]
+labels_full = ["IPPO", r"SIPPO ($\mathcal{T}_{weak}$)", r"SIPPO ($\mathcal{T}_{strong}$)"]
+
+labels_all = [labels_part, labels_full]
 
 def sign(x): return (abs(x)/x)
 def boundary(x): return x + sign(x)*0.01*x # add 1% to the boundary
@@ -51,7 +54,8 @@ for topic in topics:
     print("Topic:", topic)
     for group_pick in range(len(group_keys)):
         plt.clf()
-        save_ext = f"_{group_labels[group_pick]}_cartsafe.png"
+        labels = labels_all[group_pick]
+        save_ext = f"_{group_labels[group_pick]}_msh.png"
         plot_group = [groups[x] for x in group_keys[group_pick]]
 
         # print(plot_group)
@@ -93,7 +97,9 @@ for topic in topics:
         fig, ax = plt.subplots()
 
         for i, df in enumerate(dfs):
-            x = df.rolling(window).mean().index
+            x = df.rolling(window).mean().index if "eval" not in topic else df.rolling(window).mean().index*10
+            if topic == "eval_mean_safety" and i == 0:
+                continue
             ax.plot(x, df["mean"].rolling(window).mean(), label=labels[i], color=colors[i])
             ax.fill_between(x, (df["mean"] - df["std"]).rolling(window).mean(), (df["mean"] + df["std"]).rolling(window).mean(), alpha=0.2, color=colors[i])
 
@@ -120,3 +126,18 @@ for topic in topics:
             ax.set_ylabel("Count")
             ax.set_title("Mean Stag Penalties per Episode (Training)")
             plt.savefig(f"stag_pen{save_ext}", dpi=300, bbox_inches="tight")
+
+        if topic == "total_reward_mean":
+            ax.set_ylabel("Reward")
+            ax.set_title("Mean Reward per Episode (Training)")
+            plt.savefig(f"training{save_ext}", dpi=300, bbox_inches="tight")
+
+        if topic == "eval_mean_safety":
+            ax.set_ylabel("Safety")
+            ax.set_title("Mean Safety per Episode (Evaluation)")
+            plt.savefig(f"safety{save_ext}", dpi=300, bbox_inches="tight")
+
+        if topic == "eval_total_reward_mean":
+            ax.set_ylabel("Reward")
+            ax.set_title("Mean Reward per Episode (Evaluation)")
+            plt.savefig(f"eval{save_ext}", dpi=300, bbox_inches="tight")

@@ -4,8 +4,9 @@ import pprint
 
 runs_too_short = ["SIPPO_2024-07-05_165559", "SIPPO_2024-07-05_165554", "SIPPO_2024-07-05_165551", 'SIPPO_2024-07-04_194104']
 killed_runs = ["IPPO_2024-07-05_171759", "SIPPO_2024-07-04_210601", "SIPPO_2024-07-04_210658"]
+ignore_runs = ["SACSPPO_2024-07-05_205442", "SACSPPO_2024-07-05_205429", "SACSPPO_2024-07-05_205436"]
 
-exclude_runs = runs_too_short + killed_runs
+exclude_runs = runs_too_short + killed_runs + ignore_runs
 
 # get unique values for each field
 def name(r,a,v):
