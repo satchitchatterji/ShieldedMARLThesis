@@ -3,11 +3,11 @@ Installation on Linux
 conda create -n pls python=3.10
 conda activate pls
 
-git clone git@github.com:satchitchatterji/ThesisPlayground.git
-git clone git@github.com:satchitchatterji/ThesisPLS.git
+git clone git@github.com:satchitchatterji/ShieldedMARLThesis.git
+git clone git@github.com:satchitchatterji/pls.git
 git clone git@github.com:satchitchatterji/gym-safety.git
 
-cd ThesisPLS
+cd pls
 pip install -e .
 
 cd ../gym-safety

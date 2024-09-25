@@ -14,7 +14,7 @@ parser.add_argument("--algo",
 
 parser.add_argument("--env",
                     type=str,
-                    default="nfg_stag_hunt",
+                    default="simple_shield_v0",
                     help=f"Environment to use. Options are {ALL_ENVS.keys()}"
                     )
 
