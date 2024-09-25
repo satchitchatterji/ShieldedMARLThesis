@@ -1,0 +1,7 @@
+pygame
+pymunk
+torch
+torchvision
+pettingzoo
+gymnasium
+ray[rllib]==2.2.0

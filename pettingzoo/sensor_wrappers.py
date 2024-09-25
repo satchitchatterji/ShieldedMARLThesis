@@ -4,7 +4,10 @@ import sys
 sys.path.append("../grid_envs")
 import parallel_stag_hunt as psh
 
+from sensor_util import OnlineStats, normalized_pgg_distance
+
 warned = False
+USE_CUDA = False
 
 def get_wrapper(env):
     wrappers = {
@@ -15,7 +18,7 @@ def get_wrapper(env):
         "markov_stag_hunt": MarkovStagHuntSensorWrapper,
         "centipede": IdentitySensorWrapper,
         "publicgoods": PublicGoodsSensorWrapper,
-        "publicgoodsmany": PublicGoodsSensorWrapper,
+        "publicgoodsmany": PublicGoodsManySensorWrapper,
         "CartSafe-v0": CartSafeSensorWrapper,
         "GridNav-v0": GridNavSensorWrapper,
     }
@@ -48,7 +51,7 @@ class StagHuntSensorWrapper:
             self.num_sensors = num_sensors
         else:
             self.num_sensors = env.observation_spaces[env.agents[0]].shape[0]
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cuda" if torch.cuda.is_available() and USE_CUDA else "cpu")
         self.translation_func = self.stag_counter
 
         self.buffer_size = 50
@@ -98,7 +101,7 @@ class PublicGoodsSensorWrapper:
     def __init__(self, env, num_sensors=None):
         self.env = env
         self.num_sensors = num_sensors
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cuda" if torch.cuda.is_available() and USE_CUDA else "cpu")
         if env.observe_f:
             self.translation_func = self.obs_with_f
         else:
@@ -107,8 +110,8 @@ class PublicGoodsSensorWrapper:
         self._reset_values()
 
     def _reset_values(self):
-        self.values_low = None
-        self.values_high = None
+        self.stats = OnlineStats()
+        self.ticker = 0
 
     def obs_without_f(self, obs):
         return obs
@@ -118,21 +121,50 @@ class PublicGoodsSensorWrapper:
             self._reset_values()
         obs = obs.cpu().numpy()
         agent_other = obs[:-1]
+        agent_identity = int((self.ticker*2)%2)
+
         mult = obs[-1] # todo: update this to pdf
-        if self.values_low is None:
-            self.values_low = mult
-            self.values_high = mult
+        if agent_identity == 0 and self.ticker > 0:
+            self.stats.update(mult)
+        self.ticker += 0.5
+        if self.ticker > 2:
+            mult_uncertainty = normalized_pgg_distance(mult, self.stats.mean, self.stats.stddev())
         else:
-            self.values_low = min(mult, self.values_low)
-            self.values_high = max(mult, self.values_high)
-        
-        if self.values_high == self.values_low:
-            mult = 0.5
-        else:
-            mult = (mult - self.values_low) / (self.values_high - self.values_low)
-        
-        return torch.tensor(np.append(agent_other, mult).astype(np.float32), dtype=torch.float32, device=self.device)
+            mult_uncertainty = 1
+        mult_high = self.stats.mean > 1
+        returnval = np.hstack([agent_other, [mult_uncertainty, mult_high]]).astype(dtype=np.float32)
+        # print(self.stats.mean, self.stats.stddev(), returnval)
+        return torch.tensor(returnval, dtype=torch.float32, device=self.device)
     
+    def __call__(self, x):
+        # TODO: batch processing
+        if len(x.shape) == 1:
+            return self.translation_func(x)
+        else:
+            return torch.stack([self.translation_func(x[i]) for i in range(x.shape[0])])
+
+class PublicGoodsManySensorWrapper:
+    """
+    Sensor wrapper for the Public Goods Game environment. 
+    """
+    def __init__(self, env, num_sensors=None):
+        self.env = env
+        self.device = torch.device("cuda" if torch.cuda.is_available() and USE_CUDA else "cpu")
+        self.num_sensors = 1
+        if env.observe_f:
+            self.translation_func = self.obs_with_f
+        else:
+            self.translation_func = self.obs_without_f
+
+    def obs_without_f(self, obs):
+        return obs
+    
+    def obs_with_f(self, obs):
+        obs = obs.cpu().numpy()
+        agent_other = obs[0]
+        # return % of cooperating agents
+        return torch.tensor(agent_other, dtype=torch.float32, device=self.device)
+
     def __call__(self, x):
         # TODO: batch processing
         if len(x.shape) == 1:
@@ -147,7 +179,7 @@ class CartSafeSensorWrapper:
     def __init__(self, env, num_sensors=None):
         self.env = env
         self.num_sensors = 4
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cuda" if torch.cuda.is_available() and USE_CUDA else "cpu")
         self.translation_func = self.cart_safe_simple
     
     def cart_safe_simple(self, obs):
@@ -158,8 +190,8 @@ class CartSafeSensorWrapper:
         x = obs[0]
 
         x_cost = np.abs(x) > self.env._env.x_constraint
-        x_pos = np.abs(obs[0])  / self.env._env.x_threshold
-        left = obs[0] < 0
+        x_pos = np.abs(x-self.env._env.x_threshold/2)  / (self.env._env.x_threshold/2)
+        left = x < 0
 
         return torch.tensor(np.array([x_cost, x_pos, left, 1-left], dtype=np.float32), dtype=torch.float32, device=self.device)
 
@@ -178,7 +210,7 @@ class GridNavSensorWrapper:
     def __init__(self, env, num_sensors=None):
         self.env = env
         self.num_sensors = 4
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cuda" if torch.cuda.is_available() and USE_CUDA else "cpu")
         self.translation_func = self.grid_nav_simple
         self.obstruction_map = self.env._env.obstacle_states
     
@@ -214,7 +246,7 @@ class MarkovStagHuntSensorWrapper:
     def __init__(self, env, num_sensors=None):
         self.env = env
         self.num_sensors = 6 # based on stag relative position
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cuda" if torch.cuda.is_available() and USE_CUDA else "cpu")
         self.translation_func = self.stag_surrounded
 
     def one_hot_to_obs(self, one_hot_obs):
@@ -288,7 +320,7 @@ class WaterworldSensorWrapper:
         self.env = env
         self.num_inputs = env.observation_spaces[env.agents[0]].shape[0]
         self.output_type = output_type
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cuda" if torch.cuda.is_available() and USE_CUDA else "cpu")
         if output_type == "invert":
             self.num_sensors = self.num_inputs
             self.translation_func = self.invert_sensor_vals
