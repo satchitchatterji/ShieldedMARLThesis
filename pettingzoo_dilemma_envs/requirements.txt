@@ -1,7 +1,9 @@
-pygame
-pymunk
-torch
-torchvision
-pettingzoo
-gymnasium
-ray[rllib]==2.2.0
+DO NOT INSTALL THIS PACKAGE
+
+# pygame
+# pymunk
+# torch
+# torchvision
+# pettingzoo
+# gymnasium
+# ray[rllib]==2.2.0
