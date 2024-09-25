@@ -1,12 +1,15 @@
-# Probabilistic Logic Shielding for Multi-Agent Reinforcement Learning (MARL)
+# Safe Neurosymbolic Multi-Agent Reinforcement Learning with Probabilistic Logic Shielding
 
 This repository contains the implementation and experimental code from my MSc Thesis: **"Towards Safe Neurosymbolic Multi-Agent Reinforcement Learning: Experiments in Probabilistic Logic Shielding"**. The project focuses on enhancing safety, cooperation, and performance in multi-agent reinforcement learning (MARL) environments through the use of Probabilistic Logic Shields (PLS).
 
+| ![Parallel SMARL Interaction Scheme](assets/smarl_parallel.png)|
+|:--:| 
+| *Parallel SMARL Interaction Scheme* |
+
+
 ## Abstract (Shortened)
 
-Reinforcement learning (RL) has emerged as a powerful framework, enabling agents to learn optimal behaviors through trial and error. This project extends existing work in Probabilistic Logic Shielding (PLS), originally designed for single-agent RL, to multi-agent RL settings. By incorporating symbolic knowledge through PLS, this project aims to ensure safe and cooperative agent behavior across a variety of MARL benchmarks, including games like Prisoner’s Dilemma, Stag-Hunt, and the Extended Public Goods Game.
-
-The experiments carried out in this repository demonstrate that the integration of PLS improves agent safety, cooperation, and overall performance in various settings. This research also addresses several challenges of adapting PLS to the multi-agent domain.
+This thesis investigates the integration of Probabilistic Logic Shields (PLS) into Multi-Agent Reinforcement Learning (MARL) to improve safety, cooperation, and performance in complex environments. PLS offers a human-centric, interpretable framework that allows agents to follow high-level safety constraints while learning. Through a range of experiments in single-agent and multi-agent settings, PLS is shown to enhance cooperation and maintain safety standards across various MARL benchmarks. Despite these promising results, challenges such as computational complexity and scalability persist, paving the way for future research into more robust and efficient shielded MARL systems.
 
 ## Table of Contents
 
