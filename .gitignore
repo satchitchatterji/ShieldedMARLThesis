@@ -12,3 +12,5 @@ plots
 configs
 
 *.csv
+
+.vscode
