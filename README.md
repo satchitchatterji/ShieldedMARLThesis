@@ -85,6 +85,18 @@ If you use this code in your research, please cite my thesis:
 
 > Chatterji, S. (2024). *Towards Safe Neurosymbolic Multi-Agent Reinforcement Learning: Experiments in Probabilistic Logic Shielding*. MSc Thesis, University of Amsterdam.
 
+Or use this bibtex:
+
+    @mastersthesis{chatterji2024smarl,
+      author       = {Satchit Chatterji},
+      title        = {Towards Safe Neurosymbolic Multi-Agent Reinforcement Learning: Experiments in Probabilistic Logic Shielding},
+      school       = {University of Amsterdam},
+      year         = {2024},
+      month        = {August},
+      note         = {MSc Thesis},
+    }
+
+
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](./LICENSE) file for more details.
