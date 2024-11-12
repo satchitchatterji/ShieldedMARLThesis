@@ -1,11 +1,22 @@
 from algos import *
 from env_selection import ALL_ENVS
+import json
 
 import argparse
 parser = argparse.ArgumentParser()
 
-# env and algo params
+parser.add_argument("--config_file",
+                    type=str,
+                    default="",
+                    help="Config file to use."
+                    )
 
+parser.add_argument("--use_wandb",
+                    action="store_true",
+                    help="Use wandb for logging."
+                    )
+
+# env and algo params
 parser.add_argument("--algo",
                     type=str,
                     default="IQL",
@@ -14,7 +25,7 @@ parser.add_argument("--algo",
 
 parser.add_argument("--env",
                     type=str,
-                    default="simple_shield_v0",
+                    default="simple_pd_v0",
                     help=f"Environment to use. Options are {ALL_ENVS.keys()}"
                     )
 
@@ -128,6 +139,18 @@ parser.add_argument("--lr_critic",
                     help="(PPO) Learning rate for critic network."
                     )
 
+parser.add_argument("--vf_coef",
+                    type=float,
+                    default=0.5,
+                    help="Coefficient for value function loss."
+                    )
+
+parser.add_argument("--entropy_coef",
+                    type=float,
+                    default=0.01,
+                    help="Coefficient for entropy loss."
+                    )
+
 # DQN Params
 parser.add_argument("--buffer_size",
                     type=int,
@@ -155,8 +178,8 @@ parser.add_argument("--tau",
 
 parser.add_argument("--target_update_type",
                     type=str,
-                    default="hard",
-                    help="(DQN) Type of update to use. Options are 'soft' and 'hard'."
+                    default="soft",
+                    help="(DQN) Type of update to use. Options are 'soft' and 'hard' and 'none' (no target network)."
                     )
 
 parser.add_argument("--eps_min",
@@ -188,5 +211,12 @@ parser.add_argument("--on_policy",
                     help="Use on-policy updates for DQN."
                     )
 
-
 config = parser.parse_args()
+
+if config.config_file:
+    print(f"[INFO] Using config file {config.config_file}")
+    # json config file
+    with open(config.config_file) as f:
+        data = json.load(f)
+        for key in data:
+            setattr(config, key, data[key])

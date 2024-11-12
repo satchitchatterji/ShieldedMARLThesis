@@ -118,7 +118,7 @@ class DQNShielded(object):
         self.loss_info = []
         self.save_debug_info = False
         if self.explore_policy == 'e_greedy':
-            print("Epsilon min will be reached at timestep:", compute_eps_min_timestep(1.0, eps_min, eps_decay))
+            print(f"[DQN INFO] Epsilon min {eps_min} will be reached at timestep:", compute_eps_min_timestep(1.0, eps_min, eps_decay))
 
         self._setup()
 
@@ -167,6 +167,8 @@ class DQNShielded(object):
         elif self.update_target_type == 'soft':
             for target_param, param in zip(self.target_func_approx.parameters(), self.func_approx.parameters()):
                 target_param.data.copy_(self.tau * param.data + (1.0 - self.tau) * target_param.data)
+        elif self.update_target_type == 'none':
+            return
 
     def calc_action_values(self, inputs):
         """ Return Q(s,a) for a given state s:=inputs,
@@ -309,7 +311,7 @@ class DQNShielded(object):
                 self.history.pop(0)
             
             # update the target network
-            # self.update_target_net() #NOTE: this is ignored for now
+            self.update_target_net() 
             
             self.step += 1
         
@@ -393,6 +395,7 @@ class DQNShielded(object):
             cur_action = self.history[batch_idx][ACTION]
             cur_Q_vals = self.history[batch_idx][Q_VALS]
             cur_reward = self.history[batch_idx][REWARD]
+            next_state = self.history[batch_idx+1][STATE]
             terminal = self.history[batch_idx][TERMINAL]
 
             X_train.append(cur_state)
@@ -404,7 +407,7 @@ class DQNShielded(object):
             else:
                 next_action = self.history[batch_idx+1][ACTION]
                 next_Q_vals = self.history[batch_idx+1][Q_VALS]
-                # next_Q_vals = self.target_func_approx(next_state).detach().numpy()
+                next_Q_vals = self.target_func_approx(next_state).detach().numpy()
                 self.update_rule = "cur_reward + self.gamma*(next_Q_vals[next_action])"
                 if self.on_policy:
                     target[cur_action] = cur_reward + self.gamma*(next_Q_vals[next_action])

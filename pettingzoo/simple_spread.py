@@ -26,14 +26,14 @@ system = os.name
 now = datetime.datetime.now()
 cur_time = now.strftime("%Y-%m-%d_%H%M%S")
 
-print("Current time:", cur_time)
+print("[INFO] Current time:", cur_time)
 
 # set up environment
 max_training_episodes = config.max_eps
 max_cycles = config.max_cycles
 
 total_cycles = max_training_episodes * max_cycles
-print(f"Training for {max_training_episodes} episodes of {max_cycles} cycles each, totalling {total_cycles} cycles.")
+print(f"[INFO] Training for {max_training_episodes} episodes of {max_cycles} cycles each, totalling {total_cycles} cycles.")
 
 env_creator_func = ALL_ENVS[config.env]
 env_creator_args = ALL_ENVS_ARGS[config.env]
@@ -50,7 +50,7 @@ if hasattr(env.observation_space(env.possible_agents[0]), "shape") and len(env.o
     observation_space = env.observation_space(env.possible_agents[0]).shape[0]  # for box spaces with shape
 else: 
     observation_space = env.observation_space(env.possible_agents[0]).n         # for discrete spaces?
-print(f"Observation space: {observation_space}, Action space: {n_discrete_actions}")
+print(f"[INFO] Observation space: {observation_space}, Action space: {n_discrete_actions}")
 action_wrapper = action_wrappers.IdentityActionWrapper(n_discrete_actions)
 # sensor_wrapper = sensor_wrappers.IdentitySensorWrapper(env, observation_space)
 sensor_wrapper = sensor_wrappers.get_wrapper(env_name)(env, observation_space)
@@ -72,38 +72,8 @@ sh_params = {
     "observation_type": "ground truth",
     "get_sensor_value_ground_truth": sensor_wrapper,
 }
-# sh_params = None
 
-# print(sh_params)
-
-"""
-Param selection
-
-    all models:
-        train_epochs
-        gamma
-
-    if model == PPO:
-        update_timestep
-        eps_clip
-        lr_actor
-        lr_critic
-
-    if model == DQN:
-        buffer_size
-        batch_size
-        lr
-        eps_decay
-        eps_min
-        if target_update_type == "soft":
-            tau
-        elif target_update_type == "hard":
-            update_timestep
-
-"""
-
-
-ppo_params = ["update_timestep", "train_epochs", "gamma", "eps_clip", "lr_actor", "lr_critic"]
+ppo_params = ["update_timestep", "train_epochs", "gamma", "eps_clip", "lr_actor", "lr_critic", "vf_coef", "entropy_coef"]
 dqn_params = ["update_timestep", "train_epochs", "gamma", "buffer_size", "batch_size", "lr", "eps_decay", "eps_min", "tau", "target_update_type", "explore_policy", "eval_policy", "on_policy"]
 extracted_ppo = {k: v for k, v in vars(config).items() if k in ppo_params}
 extracted_dqn = {k: v for k, v in vars(config).items() if k in dqn_params}
@@ -152,13 +122,13 @@ config_dict.update(env_creator_args)
 
 # safe config dict to json file
 import json
-if not os.path.exists(f"configs/{env_name}/{algo_name}/{cur_time}.json"):
-    os.makedirs(f"configs/{env_name}/{algo_name}", exist_ok=True)
-with open(f"configs/{env_name}/{algo_name}/{cur_time}.json", "w") as f:
+if not os.path.exists(f"histories/configs/{env_name}/{algo_name}/{cur_time}.json"):
+    os.makedirs(f"histories/configs/{env_name}/{algo_name}", exist_ok=True)
+with open(f"histories/configs/{env_name}/{algo_name}/{cur_time}.json", "w") as f:
     s = json.dumps(config_dict, indent=4)
     f.write(s)
 
-with open("configs/run_history.csv", "a") as f:
+with open("histories/configs/run_history.csv", "a") as f:
     f.write(f"{cur_time}, {env_name}, {algo_name}_{cur_time}, \n")
 
 ############################################ TRAINING ############################################
@@ -167,7 +137,8 @@ reward_hists = []
 eval_hists = []
 eval_safeties = []
 eval_episodes = []
-wandb.init(project=f"{system}_{env_name}", name=f"{algo_name}_{cur_time}", config=config_dict)
+mode = "online" if config.use_wandb else "disabled"
+wandb.init(project=f"{system}_{env_name}", name=f"{algo_name}_{cur_time}", config=config_dict, mode=mode)
 
 ep=0
 try:
