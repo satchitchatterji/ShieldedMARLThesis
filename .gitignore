@@ -16,3 +16,5 @@ configs
 .vscode
 
 !assets/*
+
+*DS_Store
