@@ -152,13 +152,13 @@ config_dict.update(env_creator_args)
 
 # safe config dict to json file
 import json
-if not os.path.exists(f"configs/{env_name}/{algo_name}/{cur_time}.json"):
-    os.makedirs(f"configs/{env_name}/{algo_name}", exist_ok=True)
-with open(f"configs/{env_name}/{algo_name}/{cur_time}.json", "w") as f:
+if not os.path.exists(f"histories/configs/{env_name}/{algo_name}/{cur_time}.json"):
+    os.makedirs(f"histories/configs/{env_name}/{algo_name}", exist_ok=True)
+with open(f"histories/configs/{env_name}/{algo_name}/{cur_time}.json", "w") as f:
     s = json.dumps(config_dict, indent=4)
     f.write(s)
 
-with open("configs/run_history.csv", "a") as f:
+with open("histories/configs/run_history.csv", "a") as f:
     f.write(f"{cur_time}, {env_name}, {algo_name}_{cur_time}, \n")
 
 ############################################ TRAINING ############################################
