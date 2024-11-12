@@ -1,11 +1,17 @@
 from algos import *
 from env_selection import ALL_ENVS
+import json
 
 import argparse
 parser = argparse.ArgumentParser()
 
-# env and algo params
+parser.add_argument("--config_file",
+                    type=str,
+                    default="",
+                    help="Config file to use."
+                    )
 
+# env and algo params
 parser.add_argument("--algo",
                     type=str,
                     default="IQL",
@@ -188,5 +194,12 @@ parser.add_argument("--on_policy",
                     help="Use on-policy updates for DQN."
                     )
 
-
 config = parser.parse_args()
+
+if config.config_file:
+    print(f"Using config file {config.config_file}")
+    # json config file
+    with open(config.config_file) as f:
+        data = json.load(f)
+        for key in data:
+            setattr(config, key, data[key])
