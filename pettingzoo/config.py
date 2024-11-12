@@ -179,7 +179,7 @@ parser.add_argument("--tau",
 parser.add_argument("--target_update_type",
                     type=str,
                     default="hard",
-                    help="(DQN) Type of update to use. Options are 'soft' and 'hard'."
+                    help="(DQN) Type of update to use. Options are 'soft' and 'hard' and 'none' (no target network)."
                     )
 
 parser.add_argument("--eps_min",

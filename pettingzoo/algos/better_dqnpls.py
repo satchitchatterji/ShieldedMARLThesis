@@ -167,6 +167,8 @@ class DQNShielded(object):
         elif self.update_target_type == 'soft':
             for target_param, param in zip(self.target_func_approx.parameters(), self.func_approx.parameters()):
                 target_param.data.copy_(self.tau * param.data + (1.0 - self.tau) * target_param.data)
+        elif self.update_target_type == 'none':
+            return
 
     def calc_action_values(self, inputs):
         """ Return Q(s,a) for a given state s:=inputs,
@@ -309,7 +311,7 @@ class DQNShielded(object):
                 self.history.pop(0)
             
             # update the target network
-            # self.update_target_net() #NOTE: this is ignored for now
+            self.update_target_net() 
             
             self.step += 1
         
