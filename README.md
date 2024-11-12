@@ -92,11 +92,27 @@ _Execution instructions coming soon._
 
 ## Citing
 
-If you use this code in your research, please cite my thesis:
+If you use this code in your research, please cite the thesis and/or paper (the latter is preferable):
 
+Paper:
+> Chatterji, S., & Acar, E. (2024). *Think Smart, Act SMARL! Analyzing Probabilistic Logic Driven Safety in Multi-Agent Reinforcement Learning.* arXiv e-prints, arXiv-2411.
+
+Or use bibtex:
+
+    @misc{chatterji2024thinksmartactsmarl,
+          title={Think Smart, Act SMARL! Analyzing Probabilistic Logic Driven Safety in Multi-Agent Reinforcement Learning}, 
+          author={Satchit Chatterji and Erman Acar},
+          year={2024},
+          eprint={2411.04867},
+          archivePrefix={arXiv},
+          primaryClass={cs.AI},
+          url={https://arxiv.org/abs/2411.04867}, 
+    }
+
+Thesis:
 > Chatterji, S. (2024). *Towards Safe Neurosymbolic Multi-Agent Reinforcement Learning: Experiments in Probabilistic Logic Shielding*. MSc Thesis, University of Amsterdam.
 
-Or use this bibtex:
+Or use bibtex:
 
     @mastersthesis{chatterji2024smarl,
       author       = {Satchit Chatterji},
@@ -106,6 +122,7 @@ Or use this bibtex:
       month        = {August},
       note         = {MSc Thesis},
     }
+
 
 
 ## License
