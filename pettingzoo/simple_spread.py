@@ -167,7 +167,8 @@ reward_hists = []
 eval_hists = []
 eval_safeties = []
 eval_episodes = []
-wandb.init(project=f"{system}_{env_name}", name=f"{algo_name}_{cur_time}", config=config_dict)
+mode = "online" if config.use_wandb else "disabled"
+wandb.init(project=f"{system}_{env_name}", name=f"{algo_name}_{cur_time}", config=config_dict, mode=mode)
 
 ep=0
 try:

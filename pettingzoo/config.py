@@ -11,6 +11,11 @@ parser.add_argument("--config_file",
                     help="Config file to use."
                     )
 
+parser.add_argument("--use_wandb",
+                    action="store_true",
+                    help="Use wandb for logging."
+                    )
+
 # env and algo params
 parser.add_argument("--algo",
                     type=str,
@@ -20,7 +25,7 @@ parser.add_argument("--algo",
 
 parser.add_argument("--env",
                     type=str,
-                    default="simple_shield_v0",
+                    default="simple_pd_v0",
                     help=f"Environment to use. Options are {ALL_ENVS.keys()}"
                     )
 
