@@ -1,6 +1,7 @@
 import pandas as pd 
 import wandb
 import tqdm
+import os
 api = wandb.Api()
 
 # Project is specified by <entity/project-name>
@@ -36,11 +37,14 @@ dfs = {key: list() for key in keys}
 for run in tqdm.tqdm(runs, desc="Downloading runs"):
     name = run.name
     for key in keys:
-        existing_df = pd.read_csv(f"{key}.csv")
+        go_to_next = False
         col_name = f"{name} - {key}"
-        if col_name in existing_df.columns:
-            dfs[key].append(existing_df[col_name])    
-        else:
+        if f"{key}.csv" in os.listdir():
+            existing_df = pd.read_csv(f"{key}.csv")
+            if col_name in existing_df.columns:
+                dfs[key].append(existing_df[col_name])
+                go_to_next = True
+        if not go_to_next:
             try:
                 hist_df = run.history(keys=[key], pandas=True)
                 hist_df = hist_df.rename(columns={key: f"{name} - {key}"})
