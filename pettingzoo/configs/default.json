@@ -18,6 +18,8 @@
     "train_epochs": 10,
     "gamma": 0.99,
     "eps_clip": 0.1,
+    "vf_coef": 0.3,
+    "entropy_coef": 0.03,
     "lr_actor": 0.001,
     "lr_critic": 0.001,
     "buffer_size": 1000,

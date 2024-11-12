@@ -103,7 +103,7 @@ Param selection
 """
 
 
-ppo_params = ["update_timestep", "train_epochs", "gamma", "eps_clip", "lr_actor", "lr_critic"]
+ppo_params = ["update_timestep", "train_epochs", "gamma", "eps_clip", "lr_actor", "lr_critic", "vf_coef", "entropy_coef"]
 dqn_params = ["update_timestep", "train_epochs", "gamma", "buffer_size", "batch_size", "lr", "eps_decay", "eps_min", "tau", "target_update_type", "explore_policy", "eval_policy", "on_policy"]
 extracted_ppo = {k: v for k, v in vars(config).items() if k in ppo_params}
 extracted_dqn = {k: v for k, v in vars(config).items() if k in dqn_params}

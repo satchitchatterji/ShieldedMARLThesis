@@ -139,6 +139,18 @@ parser.add_argument("--lr_critic",
                     help="(PPO) Learning rate for critic network."
                     )
 
+parser.add_argument("--vf_coef",
+                    type=float,
+                    default=0.5,
+                    help="Coefficient for value function loss."
+                    )
+
+parser.add_argument("--entropy_coef",
+                    type=float,
+                    default=0.01,
+                    help="Coefficient for entropy loss."
+                    )
+
 # DQN Params
 parser.add_argument("--buffer_size",
                     type=int,

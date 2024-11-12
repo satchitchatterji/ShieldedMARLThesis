@@ -102,6 +102,14 @@ This JSON configuration file provides settings for training and evaluation in re
   Learning rate for the critic network.  
   - **Default**: `0.001`
 
+- **`vf_coef`**: *(Float)*
+  Coefficient for value function loss.
+  - **Default**: `0.5`
+
+- **`entropy_coef`**: *(Float)*
+  Coefficient for entropy loss.
+  - **Default**: `0.01`
+
 ---
 
 ### DQN-Specific Parameters
