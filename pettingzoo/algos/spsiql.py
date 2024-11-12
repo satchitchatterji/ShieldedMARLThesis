@@ -1,5 +1,5 @@
 from .base import BaseMARLAlgo
-from .better_dqnpls import DQNShielded
+from .dqn_shielded import DQNShielded
 import numpy as np
 
 class SPSIQL(BaseMARLAlgo):

@@ -1,5 +1,5 @@
 from .base import BaseMARLAlgo
-from .better_dqnpls import DQNShielded
+from .dqn_shielded import DQNShielded
 
 class IQL(BaseMARLAlgo):
     def __init__(self, env, observation_space, n_discrete_actions, action_wrapper, algorithm_params, **kwargs):
