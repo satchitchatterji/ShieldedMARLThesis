@@ -9,7 +9,6 @@ src
 models
 histories
 plots
-configs
 
 *.csv
 
