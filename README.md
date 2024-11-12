@@ -39,12 +39,14 @@ The primary goal of this project is to extend PLS to multi-agent reinforcement l
 
 This repository includes:
 - The extension of Probabilistic Logic Shields (PLS) to MARL.
-- Implementations of various MARL algorithms with and without PLS.
+- Implementations of various MARL algorithms (PPO and DQN/SARSA based) with and without PLS, on- and off-policy, and shielded and unshielded (vanilla/baseline).
 - Experimental results on multiple benchmark environments:
+  - **CartSafe (Single-agent)**
   - **Prisoner's Dilemma**
   - **Stag-Hunt Game**
   - **Extended Public Goods Game**
-  - **Markov Stag-Hunt Game**
+  - **Centipede Game**
+  - **Markov Stag-Hunt**
 
 ## Experiments
 
@@ -55,16 +57,16 @@ This repository includes:
 - **Prisoner’s Dilemma**: Investigates how PLS affects cooperation and defection strategies.
 - **Stag-Hunt**: Demonstrates how PLS leads to safer cooperative strategies in equilibrium selection.
 
-### 3. Stochastic Games
-- **Extended Public Goods Game**: Shows an example of how to incorporate uncertainty estimation in PLS.
+### 3. Extensive-Form Games
+- **Centipede Game**: Explores long-term cooperation and planning between agents.
 
-### 4. Extensive-Form Stochastic Games
-- **Centipede Game**: Explores long-term cooperation between agents.
+### 4. Stochastic Games
+- **Extended Public Goods Game**: Shows an example of how to incorporate uncertainty estimation in PLS.
 - **Markov Stag-Hunt**: Tests the influence of PLS in dynamic, stochastic environments (grid-world).
 
 ## Usage
 
-You can set up and run the code for the experiments locally by following the installation and execution instructions provided in the next sections. This repository has been tested on Windows, Linux (Ubuntu) and Mac.
+You can set up and run the code for the experiments locally by following the installation and execution instructions provided in the next sections. This repository has been tested on Windows 11 (AMD CPU), Linux (Ubuntu; Intel CPU) and MacBook (M3).
 
 ### Structure of Repository
 _Description of repo coming soon._
@@ -82,6 +84,18 @@ _Execution instructions coming soon._
 If you use this code in your research, please cite my thesis:
 
 > Chatterji, S. (2024). *Towards Safe Neurosymbolic Multi-Agent Reinforcement Learning: Experiments in Probabilistic Logic Shielding*. MSc Thesis, University of Amsterdam.
+
+Or use this bibtex:
+
+    @mastersthesis{chatterji2024smarl,
+      author       = {Satchit Chatterji},
+      title        = {Towards Safe Neurosymbolic Multi-Agent Reinforcement Learning: Experiments in Probabilistic Logic Shielding},
+      school       = {University of Amsterdam},
+      year         = {2024},
+      month        = {August},
+      note         = {MSc Thesis},
+    }
+
 
 ## License
 
