@@ -26,7 +26,7 @@
     "batch_size": 64,
     "lr": 0.001,
     "tau": 0.01,
-    "target_update_type": "hard",
+    "target_update_type": "none",
     "eps_min": 0.05,
     "eps_decay": 0.995,
     "explore_policy": "e_greedy",

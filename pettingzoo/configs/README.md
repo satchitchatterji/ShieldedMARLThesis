@@ -131,9 +131,9 @@ This JSON configuration file provides settings for training and evaluation in re
   - **Default**: `0.01`
 
 - **`target_update_type`**: *(String)*  
-  Type of target network update in DQN.  
-  - **Options**: `"soft"`, `"hard"`  
-  - **Default**: `"hard"`
+  Type of target network update in DQN.
+  - **Options**: `"soft"`, `"hard"` , `"none"`
+  - **Default**: `"soft"`
 
 - **`eps_min`**: *(Float)*  
   Minimum epsilon for exploration with an epsilon-greedy policy.  

@@ -118,7 +118,7 @@ class DQNShielded(object):
         self.loss_info = []
         self.save_debug_info = False
         if self.explore_policy == 'e_greedy':
-            print("Epsilon min will be reached at timestep:", compute_eps_min_timestep(1.0, eps_min, eps_decay))
+            print(f"[DQN INFO] Epsilon min {eps_min} will be reached at timestep:", compute_eps_min_timestep(1.0, eps_min, eps_decay))
 
         self._setup()
 
@@ -395,6 +395,7 @@ class DQNShielded(object):
             cur_action = self.history[batch_idx][ACTION]
             cur_Q_vals = self.history[batch_idx][Q_VALS]
             cur_reward = self.history[batch_idx][REWARD]
+            next_state = self.history[batch_idx+1][STATE]
             terminal = self.history[batch_idx][TERMINAL]
 
             X_train.append(cur_state)
@@ -406,7 +407,7 @@ class DQNShielded(object):
             else:
                 next_action = self.history[batch_idx+1][ACTION]
                 next_Q_vals = self.history[batch_idx+1][Q_VALS]
-                # next_Q_vals = self.target_func_approx(next_state).detach().numpy()
+                next_Q_vals = self.target_func_approx(next_state).detach().numpy()
                 self.update_rule = "cur_reward + self.gamma*(next_Q_vals[next_action])"
                 if self.on_policy:
                     target[cur_action] = cur_reward + self.gamma*(next_Q_vals[next_action])

@@ -72,36 +72,6 @@ sh_params = {
     "observation_type": "ground truth",
     "get_sensor_value_ground_truth": sensor_wrapper,
 }
-# sh_params = None
-
-# print(sh_params)
-
-"""
-Param selection
-
-    all models:
-        train_epochs
-        gamma
-
-    if model == PPO:
-        update_timestep
-        eps_clip
-        lr_actor
-        lr_critic
-
-    if model == DQN:
-        buffer_size
-        batch_size
-        lr
-        eps_decay
-        eps_min
-        if target_update_type == "soft":
-            tau
-        elif target_update_type == "hard":
-            update_timestep
-
-"""
-
 
 ppo_params = ["update_timestep", "train_epochs", "gamma", "eps_clip", "lr_actor", "lr_critic", "vf_coef", "entropy_coef"]
 dqn_params = ["update_timestep", "train_epochs", "gamma", "buffer_size", "batch_size", "lr", "eps_decay", "eps_min", "tau", "target_update_type", "explore_policy", "eval_policy", "on_policy"]
