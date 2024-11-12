@@ -7,6 +7,7 @@ action(2)::action(up);
 action(3)::action(down);
 action(4)::action(stay).
 
+% sensors
 sensor_value(0)::sensor(left).
 sensor_value(1)::sensor(right).
 sensor_value(2)::sensor(up).
@@ -16,13 +17,10 @@ sensor_value(5)::sensor(stag_near_other).
 
 % define movement towards the stag
 go_towards_stag :- action(Dir), sensor(Dir).
-
 % it is unsafe to not go towards the stag if it not near
 unsafe_next :- \+go_towards_stag, \+sensor(stag_near_self).
-
 % it is unsafe to not stay in place if the stag is near and there is no other agent
 unsafe_next :-  sensor(stag_near_self), \+sensor(stag_near_other), \+action(stay).
-
 % it is unsafe to not hunt if the stag is near and there is another agent
 unsafe_next :-  sensor(stag_near_self), sensor(stag_near_other), \+go_towards_stag.
 
