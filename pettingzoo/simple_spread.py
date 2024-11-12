@@ -26,14 +26,14 @@ system = os.name
 now = datetime.datetime.now()
 cur_time = now.strftime("%Y-%m-%d_%H%M%S")
 
-print("Current time:", cur_time)
+print("[INFO] Current time:", cur_time)
 
 # set up environment
 max_training_episodes = config.max_eps
 max_cycles = config.max_cycles
 
 total_cycles = max_training_episodes * max_cycles
-print(f"Training for {max_training_episodes} episodes of {max_cycles} cycles each, totalling {total_cycles} cycles.")
+print(f"[INFO] Training for {max_training_episodes} episodes of {max_cycles} cycles each, totalling {total_cycles} cycles.")
 
 env_creator_func = ALL_ENVS[config.env]
 env_creator_args = ALL_ENVS_ARGS[config.env]
@@ -50,7 +50,7 @@ if hasattr(env.observation_space(env.possible_agents[0]), "shape") and len(env.o
     observation_space = env.observation_space(env.possible_agents[0]).shape[0]  # for box spaces with shape
 else: 
     observation_space = env.observation_space(env.possible_agents[0]).n         # for discrete spaces?
-print(f"Observation space: {observation_space}, Action space: {n_discrete_actions}")
+print(f"[INFO] Observation space: {observation_space}, Action space: {n_discrete_actions}")
 action_wrapper = action_wrappers.IdentityActionWrapper(n_discrete_actions)
 # sensor_wrapper = sensor_wrappers.IdentitySensorWrapper(env, observation_space)
 sensor_wrapper = sensor_wrappers.get_wrapper(env_name)(env, observation_space)

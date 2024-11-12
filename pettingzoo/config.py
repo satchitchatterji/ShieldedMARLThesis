@@ -197,7 +197,7 @@ parser.add_argument("--on_policy",
 config = parser.parse_args()
 
 if config.config_file:
-    print(f"Using config file {config.config_file}")
+    print(f"[INFO] Using config file {config.config_file}")
     # json config file
     with open(config.config_file) as f:
         data = json.load(f)
