@@ -1,10 +1,11 @@
 # Safe Neurosymbolic Multi-Agent Reinforcement Learning with Probabilistic Logic Shielding
 
-This repository contains the implementation and experimental code from my MSc Thesis and followup paper: <p align="center">
+This repository contains the implementation and experimental code from my MSc Thesis and follow-up paper ([UvA repository](https://scripties.uba.uva.nl/search?id=record_55229), [arXiv summary](https://arxiv.org/pdf/2411.04867v1)): <p align="center">
   <strong><em>Towards Safe Neurosymbolic Multi-Agent Reinforcement Learning:
    Experiments in Probabilistic Logic Shielding</em></strong>
 </p>
- ([UvA repository](https://scripties.uba.uva.nl/search?id=record_55229), [arXiv summary](https://arxiv.org/pdf/2411.04867v1)). The project focuses on enhancing safety, cooperation, and performance in multi-agent reinforcement learning (MARL) environments through the use of Probabilistic Logic Shields (PLS).
+
+The project focuses on enhancing safety, cooperation, and performance in multi-agent reinforcement learning (MARL) environments through the use of Probabilistic Logic Shields (PLS).
 
 | ![Parallel SMARL Interaction Scheme](assets/smarl_parallel.png)|
 |:--:| 
