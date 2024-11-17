@@ -1,5 +1,6 @@
 {
     "use_wandb": false,
+    "device": "cpu",
     "algo": "IPPO",
     "env": "simple_pd_v0",
     "max_cycles": 25,

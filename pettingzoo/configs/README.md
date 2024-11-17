@@ -10,6 +10,10 @@ This JSON configuration file provides settings for training and evaluation in re
   Enable or disable `wandb` (Weights & Biases) for logging and experiment tracking.  
   - **Default**: `false`
 
+- **`devide`**: *(String)*
+  Device to use for training.
+  - **Default**: `cpu`
+
 - **`algo`**: *(String)*  
   Algorithm to be used for training.  
   - **Options**: `"IPPO"`, `"IQL"`, etc.
