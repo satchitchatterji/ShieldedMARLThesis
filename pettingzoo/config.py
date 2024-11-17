@@ -16,6 +16,12 @@ parser.add_argument("--use_wandb",
                     help="Use wandb for logging."
                     )
 
+parser.add_argument("--device",
+                    type=str,
+                    default="cpu",
+                    help="Device to use for training."
+                    )
+
 # env and algo params
 parser.add_argument("--algo",
                     type=str,
