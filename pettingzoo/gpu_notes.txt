@@ -1,0 +1,10 @@
+Things that need GPU:
+
+[ ] Envs
+[ ] Algos
+    [ ] PPO
+[ ] Action wrappers
+[x] Sensor wrappers
+    Tests:
+        [x] IdentitySensorWrapper
+[ ] Shields
