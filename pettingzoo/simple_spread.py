@@ -20,6 +20,8 @@ from run_episode import run_episode, eval_episode
 np.random.seed(config.seed)
 torch.manual_seed(config.seed)
 
+device = torch.device(config.device)
+
 system = os.name
 
 # cur_time = time.time()
@@ -51,9 +53,9 @@ if hasattr(env.observation_space(env.possible_agents[0]), "shape") and len(env.o
 else: 
     observation_space = env.observation_space(env.possible_agents[0]).n         # for discrete spaces?
 print(f"[INFO] Observation space: {observation_space}, Action space: {n_discrete_actions}")
-action_wrapper = action_wrappers.IdentityActionWrapper(n_discrete_actions)
-# sensor_wrapper = sensor_wrappers.IdentitySensorWrapper(env, observation_space)
-sensor_wrapper = sensor_wrappers.get_wrapper(env_name)(env, observation_space)
+
+action_wrapper = action_wrappers.get_wrapper(env_name, n_discrete_actions, device)
+sensor_wrapper = sensor_wrappers.get_wrapper(env_name)(env, observation_space, device)
 
 shield_selector = ShieldSelector(env_name=env_name, 
                                  n_actions=action_wrapper.num_actions, 
@@ -71,10 +73,11 @@ sh_params = {
     "shield_program": shield_selector.file,
     "observation_type": "ground truth",
     "get_sensor_value_ground_truth": sensor_wrapper,
+    "device": device
 }
 
-ppo_params = ["update_timestep", "train_epochs", "gamma", "eps_clip", "lr_actor", "lr_critic", "vf_coef", "entropy_coef"]
-dqn_params = ["update_timestep", "train_epochs", "gamma", "buffer_size", "batch_size", "lr", "eps_decay", "eps_min", "tau", "target_update_type", "explore_policy", "eval_policy", "on_policy"]
+ppo_params = ["update_timestep", "train_epochs", "gamma", "eps_clip", "lr_actor", "lr_critic", "vf_coef", "entropy_coef", "device"]
+dqn_params = ["update_timestep", "train_epochs", "gamma", "buffer_size", "batch_size", "lr", "eps_decay", "eps_min", "tau", "target_update_type", "explore_policy", "eval_policy", "on_policy", "device"]
 extracted_ppo = {k: v for k, v in vars(config).items() if k in ppo_params}
 extracted_dqn = {k: v for k, v in vars(config).items() if k in dqn_params}
 all_algo_params = {k: v for k, v in vars(config).items() if k in ppo_params or k in dqn_params}
@@ -96,7 +99,8 @@ algo = ALL_ALGORITHMS[algo_name](env=env,
                                  sh_params=sh_params,
                                  algorithm_params=all_algo_params,
                                  alpha=alpha,
-                                 shielded_ratio=config.shielded_ratio
+                                 shielded_ratio=config.shielded_ratio,
+                                 device=device
                                  )
 
 ############################################ SAFETY CALC ############################################
